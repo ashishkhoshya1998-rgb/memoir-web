@@ -254,7 +254,81 @@ h1, h2, h3, h4, blockquote { font-family: 'Playfair Display', serif; }
   .footer-trust { grid-template-columns: repeat(4, 1fr); }
 }
 
-/* Moment card */
+/* ── Hero split layout ──────────────────────────────────────── */
+.hero-split {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+.hero-text-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 120px 32px 64px;
+  background: #FAFAF7;
+  flex: 1;
+}
+.hero-img-panel {
+  position: relative;
+  overflow: hidden;
+  min-height: 56vw;
+  flex-shrink: 0;
+}
+@media (min-width: 768px) {
+  .hero-split {
+    flex-direction: row;
+    min-height: 100vh;
+  }
+  .hero-text-panel {
+    padding: 140px 72px 100px 80px;
+    flex: 0 0 48%;
+    max-width: 48%;
+  }
+  .hero-img-panel {
+    flex: 1;
+    min-height: 100vh;
+  }
+}
+
+/* ── Marquee ────────────────────────────────────────────────── */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 24s linear infinite;
+}
+.marquee-wrap:hover .marquee-track { animation-play-state: paused; }
+
+/* ── Scroll-reveal (used via inline style in R component) ───── */
+/* styles applied inline; these classes are just helpers */
+
+/* ── Moment row ─────────────────────────────────────────────── */
+.moment-row {
+  border-bottom: 1px solid rgba(184,151,90,0.14);
+  transition: background 0.25s ease;
+  cursor: pointer;
+  background: none;
+  width: 100%;
+  text-align: left;
+  padding: 0;
+}
+.moment-row:hover { background: rgba(184,151,90,0.03); }
+
+/* ── Product editorial grid ─────────────────────────────────── */
+.product-editorial {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 3px;
+  background: #E8E0D4;
+}
+@media (min-width: 768px) {
+  .product-editorial { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* ── Moment card (legacy, kept) ─────────────────────────────── */
 .moment-card {
   position: relative;
   overflow: hidden;
