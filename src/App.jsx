@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 
 // ============================================================
 // MEMOIR — Complete Website
-// "Jewellery, as a memory you can touch."
+// "Jewellery, memory you can touch."
 // ============================================================
 
 // --- Data Layer ---
@@ -17,7 +17,7 @@ const PRODUCTS = [
     momentLabel: "New Beginnings",
     hook: "For the woman who just turned the page. A new job, a new city, a new version of herself. This ring holds that quiet courage.",
     gifterHook: "When she's starting something new, this ring says 'I believe in you' without needing the words.",
-    story: "We designed The First Chapter Ring for a specific kind of woman — one who's standing at the start of something new and wants to carry that feeling with her. New beginnings are brave. They deserve to be marked, not just lived through. Wear it as a daily reminder that you chose to begin.",
+    story: "We designed The First Chapter Ring for a specific kind of woman — one who's standing at the start of something new and wants to carry that feeling with her. New beginnings are brave. They deserve to be marked, not just lived through. Wear it daily reminder that you chose to begin.",
     specs: ["925 Sterling Silver", "BIS Hallmarked", "Rhodium Plated", "Adjustable"],
     tags: ["Most gifted for new jobs", "Bestseller"],
     images: [
@@ -423,7 +423,7 @@ function HomePage({ navigate }) {
         <div style={{ position: "relative", zIndex: 2, maxWidth: 1280, margin: "0 auto", padding: "0 32px", height: "100%", display: "flex", alignItems: "center" }}>
           <div style={{ maxWidth: 560 }}>
             <p className="font-handwritten animate-fade-up stagger-1" style={{ fontSize: 18, color: "var(--gold)", marginBottom: 16 }}>
-              Jewellery, as a memory you can touch
+              Jewellery, memory you can touch
             </p>
             <h1 className="font-serif animate-fade-up stagger-2" style={{ fontSize: "clamp(36px, 5vw, 56px)", lineHeight: 1.1, fontWeight: 400, color: "var(--charcoal)", marginBottom: 20 }}>
               Designed around the<br />moments that matter
@@ -735,7 +735,7 @@ function ProductPage({ productId, navigate, onAddToCart }) {
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   <Icon name="redeem" size={20} />
                   <div>
-                    <p style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>Send as Gift</p>
+                    <p style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>Send</p>
                     <p style={{ fontSize: 10, color: "var(--on-surface-variant)" }}>Includes handwritten story note & premium box</p>
                   </div>
                 </div>
@@ -840,7 +840,7 @@ function ProductPage({ productId, navigate, onAddToCart }) {
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 32 }} className="unbox-grid">
           {[
-            { step: "01", title: "The Opening", subtitle: "The Ink-Pressed Box", desc: "A heavy, linen-textured box sealed with care, ensuring the moment feels as permanent as the metal inside.", img: PRODUCTS[1].images[0] },
+            { step: "01", title: "The Opening", subtitle: "The Ink-Pressed Box", desc: "A heavy, linen-textured box sealed with care, ensuring the moment feels metal inside.", img: PRODUCTS[1].images[0] },
             { step: "02", title: "The Narrative", subtitle: "The Story Card", desc: "Each piece comes with a hand-lettered card detailing its emotional inspiration — the story that makes it hers.", img: PRODUCTS[3].images[1], offset: 32 },
             { step: "03", title: "The Heirloom", subtitle: "The First Glimpse", desc: "Protected by silk velvet, the silver is polished one final time before shipment to ensure a mirror-like reveal.", img: PRODUCTS[4].images[2], offset: 64 },
           ].map((item) => (
@@ -961,7 +961,7 @@ function GiftGuidePage({ navigate }) {
               <Icon name="arrow_back" size={16} /> Back
             </button>
             <h1 className="font-serif" style={{ fontSize: 32, fontWeight: 400, marginBottom: 8 }}>
-              Here&apos;s what we&apos;d recommend for {relationshipCopy[relationship]}
+              Here&apos;s what we&apos;d recommend for {relationshipCopy[relationship!]}
             </h1>
             <p style={{ fontSize: 14, color: "var(--on-surface-variant)", marginBottom: 40 }}>Each piece arrives gift-wrapped with a personal message card.</p>
             <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
@@ -1043,7 +1043,7 @@ function AboutPage({ navigate }) {
               {[
                 { title: "Real Silver, Always", desc: "Every Memoir piece is 925 sterling silver with BIS hallmarking. No plated brass, no compromises. Premium rhodium plating ensures it stays beautiful through daily wear." },
                 { title: "Designed for Moments", desc: "We don't chase trends. Each piece is designed around a specific life moment — a new beginning, an achievement, a quiet promise. The design serves the emotion, not the other way around." },
-                { title: "Gifting as a First-Class Experience", desc: "We built the entire gifting experience from scratch — the box, the story card, the personal message, the price-hidden packaging. Because giving a gift should feel as good as receiving one." },
+                { title: "Gifting First-Class Experience", desc: "We built the entire gifting experience from scratch — the box, the story card, the personal message, the price-hidden packaging. Because giving a gift should feel one." },
               ].map((item) => (
                 <div key={item.title}>
                   <h3 style={{ fontSize: 14, letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 700, marginBottom: 8 }}>{item.title}</h3>
@@ -1069,6 +1069,317 @@ function AboutPage({ navigate }) {
             style={{ padding: "16px 36px", background: "transparent", color: "white", border: "1px solid rgba(255,255,255,0.3)", fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", fontWeight: 600, cursor: "pointer" }}
           >
             Find a Gift
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+// --- Care Guide Page ---
+function CareGuidePage({ navigate }) {
+  return (
+    <div style={{ paddingTop: 80 }}>
+      {/* Hero */}
+      <section style={{ position: "relative", height: "40vh", minHeight: 300, overflow: "hidden" }}>
+        <img src={PRODUCTS[3].images[1]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", filter: "brightness(0.55) saturate(0.8)" }} />
+        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ textAlign: "center", maxWidth: 600, padding: 32 }}>
+            <span className="font-handwritten animate-fade-up stagger-1" style={{ fontSize: 22, color: "var(--gold)", display: "block", marginBottom: 16 }}>
+              Keep it beautiful
+            </span>
+            <h1 className="font-serif animate-fade-up stagger-2" style={{ fontSize: "clamp(32px, 5vw, 52px)", fontWeight: 300, color: "white", lineHeight: 1.15 }}>
+              Care Guide
+            </h1>
+          </div>
+        </div>
+      </section>
+      <TrustStrip />
+
+      <section style={{ maxWidth: 720, margin: "0 auto", padding: "96px 32px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 48 }}>
+          {/* Intro */}
+          <div>
+            <p className="font-serif" style={{ fontSize: 20, fontStyle: "italic", lineHeight: 1.8, color: "var(--primary)" }}>
+              Every Memoir piece is crafted from 925 sterling silver with rhodium plating. With a little care, your jewellery will stay moment it represents.
+            </p>
+          </div>
+
+          {/* Daily Wear */}
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+              <div style={{ width: 48, height: 48, background: "rgba(201,169,110,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Icon name="sunny" size={24} />
+              </div>
+              <h2 className="font-serif" style={{ fontSize: 28, fontWeight: 400, fontStyle: "italic" }}>Daily Wear</h2>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {[
+                { title: "Put jewellery on last", desc: "Apply perfume, lotion, and makeup before wearing your Memoir piece. Chemicals in beauty products can dull the rhodium plating over time." },
+                { title: "Remove before water activities", desc: "Take off your jewellery before showering, swimming, or washing dishes. Prolonged water exposure can accelerate tarnishing." },
+                { title: "Avoid during workouts", desc: "Sweat contains salts that can affect silver. Remove your pieces before exercising or any strenuous activity." },
+                { title: "Be mindful of impact", desc: "Sterling silver is a soft metal. Avoid knocking your jewellery against hard surfaces to prevent scratches and dents." },
+              ].map((item) => (
+                <div key={item.title} style={{ padding: "20px 24px", background: "var(--surface-dim)", borderLeft: "3px solid var(--gold)" }}>
+                  <h3 style={{ fontSize: 14, fontWeight: 700, letterSpacing: "0.05em", marginBottom: 6 }}>{item.title}</h3>
+                  <p style={{ fontSize: 14, lineHeight: 1.7, color: "var(--on-surface-variant)" }}>{item.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Cleaning */}
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+              <div style={{ width: 48, height: 48, background: "rgba(201,169,110,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Icon name="auto_awesome" size={24} />
+              </div>
+              <h2 className="font-serif" style={{ fontSize: 28, fontWeight: 400, fontStyle: "italic" }}>Cleaning Your Piece</h2>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+              <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--on-surface-variant)" }}>
+                Regular cleaning keeps your Memoir jewellery looking its best. Here&apos;s the gentle method we recommend:
+              </p>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20 }}>
+                {[
+                  { step: "01", title: "Soft Cloth", desc: "Gently wipe your piece with the included Memoir polishing cloth after each wear. This removes oils and restores shine." },
+                  { step: "02", title: "Mild Soap Wash", desc: "For deeper cleaning, use lukewarm water with a drop of mild dish soap. Soak for 2-3 minutes, then gently rub with a soft cloth." },
+                  { step: "03", title: "Dry Thoroughly", desc: "Pat dry with a clean, lint-free cloth immediately after washing. Never leave your jewellery to air dry — water spots can form." },
+                ].map((item) => (
+                  <div key={item.step} style={{ padding: 24, border: "1px solid var(--outline-variant)", textAlign: "center" }}>
+                    <span style={{ fontSize: 32, fontWeight: 200, color: "var(--gold)", display: "block", marginBottom: 12 }}>{item.step}</span>
+                    <h3 style={{ fontSize: 14, fontWeight: 700, letterSpacing: "0.05em", marginBottom: 8 }}>{item.title}</h3>
+                    <p style={{ fontSize: 13, lineHeight: 1.7, color: "var(--on-surface-variant)" }}>{item.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Storage */}
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+              <div style={{ width: 48, height: 48, background: "rgba(201,169,110,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Icon name="inventory_2" size={24} />
+              </div>
+              <h2 className="font-serif" style={{ fontSize: 28, fontWeight: 400, fontStyle: "italic" }}>Storage</h2>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {[
+                { title: "Use the Memoir pouch", desc: "Every piece comes with a soft velvet pouch. Store your jewellery in it when not wearing — this prevents scratches and reduces tarnishing from air exposure." },
+                { title: "Store pieces separately", desc: "Keep each piece in its own pouch or compartment. Sterling silver is soft and can scratch against other jewellery or hard surfaces." },
+                { title: "Keep in a cool, dry place", desc: "Avoid storing jewellery in humid environments like bathrooms. A bedroom drawer or jewellery box is ideal." },
+                { title: "Anti-tarnish strips", desc: "For extra protection, place an anti-tarnish strip inside your storage. These absorb moisture and sulphur compounds that cause tarnishing." },
+              ].map((item) => (
+                <div key={item.title} style={{ padding: "20px 24px", background: "var(--surface-dim)", borderLeft: "3px solid var(--gold)" }}>
+                  <h3 style={{ fontSize: 14, fontWeight: 700, letterSpacing: "0.05em", marginBottom: 6 }}>{item.title}</h3>
+                  <p style={{ fontSize: 14, lineHeight: 1.7, color: "var(--on-surface-variant)" }}>{item.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* What to Avoid */}
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+              <div style={{ width: 48, height: 48, background: "rgba(201,169,110,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Icon name="block" size={24} />
+              </div>
+              <h2 className="font-serif" style={{ fontSize: 28, fontWeight: 400, fontStyle: "italic" }}>What to Avoid</h2>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }} className="story-grid">
+              {[
+                "Harsh chemical cleaners",
+                "Ultrasonic jewellery cleaners",
+                "Chlorinated water (pools)",
+                "Direct perfume or hairspray",
+                "Sleeping with jewellery on",
+                "Abrasive cloths or brushes",
+              ].map((item) => (
+                <div key={item} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", background: "rgba(117,89,57,0.04)", border: "1px solid var(--outline-variant)" }}>
+                  <Icon name="close" size={16} />
+                  <span style={{ fontSize: 13, color: "var(--on-surface-variant)" }}>{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Rhodium Note */}
+          <div style={{ background: "var(--surface-dim)", padding: 40, borderLeft: "3px solid var(--gold)" }}>
+            <h3 className="font-serif" style={{ fontSize: 22, fontStyle: "italic", marginBottom: 12 }}>A Note on Rhodium Plating</h3>
+            <p style={{ fontSize: 14, lineHeight: 1.8, color: "var(--on-surface-variant)" }}>
+              All Memoir pieces are rhodium plated for extra shine and tarnish resistance. With daily wear, rhodium plating naturally wears over time (typically 12-18 months). This is normal and reveals the warm tone of the sterling silver beneath. If you prefer the bright rhodium finish, any local jeweller can re-plate your piece affordably.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section style={{ background: "var(--charcoal)", padding: "80px 32px", textAlign: "center" }}>
+        <h2 className="font-serif" style={{ fontSize: 32, color: "white", fontWeight: 300, marginBottom: 12 }}>Need help with your piece?</h2>
+        <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", marginBottom: 28 }}>We&apos;re always happy to help with care questions or re-plating guidance.</p>
+        <button
+          onClick={() => navigate("moments")}
+          style={{ padding: "16px 36px", background: "var(--gold)", color: "var(--charcoal)", border: "none", fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", fontWeight: 600, cursor: "pointer" }}
+        >
+          Shop Collection
+        </button>
+      </section>
+    </div>
+  );
+}
+
+// --- Shipping Policy Page ---
+function ShippingPolicyPage({ navigate }) {
+  return (
+    <div style={{ paddingTop: 80 }}>
+      {/* Hero */}
+      <section style={{ position: "relative", height: "40vh", minHeight: 300, overflow: "hidden" }}>
+        <img src={PRODUCTS[1].images[0]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", filter: "brightness(0.55) saturate(0.8)" }} />
+        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ textAlign: "center", maxWidth: 600, padding: 32 }}>
+            <span className="font-handwritten animate-fade-up stagger-1" style={{ fontSize: 22, color: "var(--gold)", display: "block", marginBottom: 16 }}>
+              We&apos;ve got you covered
+            </span>
+            <h1 className="font-serif animate-fade-up stagger-2" style={{ fontSize: "clamp(32px, 5vw, 52px)", fontWeight: 300, color: "white", lineHeight: 1.15 }}>
+              Shipping & Returns
+            </h1>
+          </div>
+        </div>
+      </section>
+      <TrustStrip />
+
+      <section style={{ maxWidth: 720, margin: "0 auto", padding: "96px 32px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 56 }}>
+
+          {/* Shipping */}
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
+              <div style={{ width: 48, height: 48, background: "rgba(201,169,110,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Icon name="local_shipping" size={24} />
+              </div>
+              <h2 className="font-serif" style={{ fontSize: 28, fontWeight: 400, fontStyle: "italic" }}>Shipping</h2>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 32 }} className="story-grid">
+              <div style={{ padding: 28, background: "rgba(201,169,110,0.06)", border: "1px solid var(--gold)", textAlign: "center" }}>
+                <Icon name="local_shipping" size={32} />
+                <h3 style={{ fontSize: 14, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", margin: "12px 0 8px" }}>Free Shipping</h3>
+                <p style={{ fontSize: 14, color: "var(--on-surface-variant)", lineHeight: 1.6 }}>On all orders above <strong>{formatPrice(1999)}</strong></p>
+              </div>
+              <div style={{ padding: 28, background: "var(--surface-dim)", border: "1px solid var(--outline-variant)", textAlign: "center" }}>
+                <Icon name="payments" size={32} />
+                <h3 style={{ fontSize: 14, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", margin: "12px 0 8px" }}>Flat {formatPrice(99)}</h3>
+                <p style={{ fontSize: 14, color: "var(--on-surface-variant)", lineHeight: 1.6 }}>For orders below {formatPrice(1999)}</p>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {[
+                { title: "Processing Time", desc: "Orders are processed within 1-2 business days. You'll receive a confirmation email with tracking details once your order ships." },
+                { title: "Delivery Timeline", desc: "Standard delivery takes 4-7 business days across India. Metro cities typically receive orders in 3-5 business days." },
+                { title: "Tracking Your Order", desc: "Once shipped, you'll receive a tracking link via email and SMS. You can track your package in real-time through our shipping partner's website." },
+                { title: "Gift Orders", desc: "Gift orders are shipped without any pricing information. The package includes the Memoir gift box, story card, and your personal message — nothing else." },
+              ].map((item) => (
+                <div key={item.title} style={{ padding: "20px 24px", background: "var(--surface-dim)", borderLeft: "3px solid var(--gold)" }}>
+                  <h3 style={{ fontSize: 14, fontWeight: 700, letterSpacing: "0.05em", marginBottom: 6 }}>{item.title}</h3>
+                  <p style={{ fontSize: 14, lineHeight: 1.7, color: "var(--on-surface-variant)" }}>{item.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Returns */}
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
+              <div style={{ width: 48, height: 48, background: "rgba(201,169,110,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Icon name="assignment_return" size={24} />
+              </div>
+              <h2 className="font-serif" style={{ fontSize: 28, fontWeight: 400, fontStyle: "italic" }}>Returns & Exchanges</h2>
+            </div>
+
+            <div style={{ background: "rgba(201,169,110,0.06)", border: "1px solid var(--gold)", padding: 28, marginBottom: 24, textAlign: "center" }}>
+              <h3 className="font-serif" style={{ fontSize: 24, fontStyle: "italic", marginBottom: 8 }}>15-Day Easy Returns</h3>
+              <p style={{ fontSize: 14, color: "var(--on-surface-variant)" }}>No questions asked. We want you to love your piece.</p>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 20, marginBottom: 32 }}>
+              <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--on-surface-variant)" }}>
+                We understand that sometimes a piece doesn&apos;t feel right. Our return policy is designed to make the process.
+              </p>
+
+              <h3 style={{ fontSize: 14, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" }}>How to Return</h3>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 20 }}>
+                {[
+                  { step: "01", title: "Reach Out", desc: "Email us at hello@memoir.in or message us on WhatsApp within 15 days of delivery." },
+                  { step: "02", title: "Ship It Back", desc: "We'll arrange a free reverse pickup from your doorstep. No need to visit a courier office." },
+                  { step: "03", title: "Get Refunded", desc: "Once we receive and inspect the piece, your refund is processed within 5-7 business days." },
+                ].map((item) => (
+                  <div key={item.step} style={{ padding: 24, border: "1px solid var(--outline-variant)", textAlign: "center" }}>
+                    <span style={{ fontSize: 32, fontWeight: 200, color: "var(--gold)", display: "block", marginBottom: 12 }}>{item.step}</span>
+                    <h4 style={{ fontSize: 14, fontWeight: 700, letterSpacing: "0.05em", marginBottom: 8 }}>{item.title}</h4>
+                    <p style={{ fontSize: 13, lineHeight: 1.7, color: "var(--on-surface-variant)" }}>{item.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <h3 style={{ fontSize: 14, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 16 }}>Return Conditions</h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {[
+                { icon: "check_circle", text: "Item must be in original condition — unworn, undamaged, with tags attached" },
+                { icon: "check_circle", text: "Must be returned in the original Memoir packaging" },
+                { icon: "check_circle", text: "Return request must be raised within 15 days of delivery" },
+                { icon: "check_circle", text: "Refund will be issued to the original payment method" },
+                { icon: "swap_horiz", text: "Exchanges are available for a different piece of equal or higher value" },
+              ].map((item) => (
+                <div key={item.text} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "12px 16px", background: "var(--surface-dim)" }}>
+                  <Icon name={item.icon} size={18} />
+                  <span style={{ fontSize: 14, lineHeight: 1.6, color: "var(--on-surface-variant)" }}>{item.text}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* FAQ */}
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
+              <div style={{ width: 48, height: 48, background: "rgba(201,169,110,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Icon name="help" size={24} />
+              </div>
+              <h2 className="font-serif" style={{ fontSize: 28, fontWeight: 400, fontStyle: "italic" }}>Frequently Asked</h2>
+            </div>
+            <div>
+              {[
+                { q: "Do you ship internationally?", a: "Currently, we only ship within India. International shipping is coming soon — sign up for our newsletter to be the first to know." },
+                { q: "Can I change my delivery address after placing an order?", a: "Yes, order hasn't been shipped yet. Reach out to us at hello@memoir.in and we'll update it for you." },
+                { q: "What if my order arrives damaged?", a: "We're truly sorry if this happens. Contact us within 48 hours of delivery with photos, and we'll send a replacement immediately at no extra cost." },
+                { q: "Can I return a gift order?", a: "Yes. The recipient can initiate a return by contacting us directly. The refund will be processed to the original buyer's payment method." },
+                { q: "Do you offer express shipping?", a: "Not at this time. Our standard shipping (4-7 business days) ensures every piece is carefully inspected and beautifully packaged before it reaches you." },
+              ].map((item) => (
+                <details key={item.q} style={{ borderBottom: "1px solid var(--outline-variant)" }}>
+                  <summary style={{ listStyle: "none", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", padding: "18px 0", fontSize: 15, fontWeight: 500 }}>
+                    {item.q}
+                    <Icon name="expand_more" size={18} />
+                  </summary>
+                  <div style={{ paddingBottom: 18, fontSize: 14, color: "var(--on-surface-variant)", lineHeight: 1.7 }}>{item.a}</div>
+                </details>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section style={{ background: "var(--charcoal)", padding: "80px 32px", textAlign: "center" }}>
+        <h2 className="font-serif" style={{ fontSize: 32, color: "white", fontWeight: 300, marginBottom: 12 }}>Still have questions?</h2>
+        <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", marginBottom: 28 }}>We&apos;re here to help — reach out anytime.</p>
+        <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
+          <button style={{ padding: "16px 36px", background: "var(--gold)", color: "var(--charcoal)", border: "none", fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}>
+            <Icon name="mail" size={16} /> Email Us
+          </button>
+          <button style={{ padding: "16px 36px", background: "transparent", color: "white", border: "1px solid rgba(255,255,255,0.3)", fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}>
+            <Icon name="chat" size={16} /> WhatsApp
           </button>
         </div>
       </section>
@@ -1174,7 +1485,7 @@ function Footer({ navigate }) {
       <div style={{ maxWidth: 1280, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 48 }}>
         <div>
           <span className="font-serif" style={{ fontSize: 24, fontStyle: "italic", display: "block", marginBottom: 12 }}>Memoir</span>
-          <p style={{ fontSize: 13, color: "var(--on-surface-variant)", lineHeight: 1.7 }}>Jewellery, as a memory you can touch.</p>
+          <p style={{ fontSize: 13, color: "var(--on-surface-variant)", lineHeight: 1.7 }}>Jewellery, memory you can touch.</p>
           <p style={{ fontSize: 12, color: "var(--on-surface-variant)", marginTop: 16, opacity: 0.6 }}>&copy; 2026 Memoir. Crafted for moments that matter.</p>
         </div>
         <div>
@@ -1187,9 +1498,14 @@ function Footer({ navigate }) {
         </div>
         <div>
           <p style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", fontWeight: 700, marginBottom: 16 }}>About</p>
-          {["Our Story", "Care Guide", "Shipping Policy", "Returns & Exchange"].map((item) => (
-            <button key={item} onClick={() => navigate("about")} className="font-serif line-reveal" style={{ display: "block", background: "none", border: "none", cursor: "pointer", fontSize: 15, color: "var(--on-surface-variant)", marginBottom: 10, paddingBottom: 2 }}>
-              {item}
+          {[
+            { label: "Our Story", page: "about" },
+            { label: "Care Guide", page: "care-guide" },
+            { label: "Shipping Policy", page: "shipping" },
+            { label: "Returns & Exchange", page: "shipping" },
+          ].map((item) => (
+            <button key={item.label} onClick={() => navigate(item.page)} className="font-serif line-reveal" style={{ display: "block", background: "none", border: "none", cursor: "pointer", fontSize: 15, color: "var(--on-surface-variant)", marginBottom: 10, paddingBottom: 2 }}>
+              {item.label}
             </button>
           ))}
         </div>
@@ -1249,6 +1565,10 @@ export default function App() {
         return <GiftGuidePage navigate={navigate} onAddToCart={addToCart} />;
       case "about":
         return <AboutPage navigate={navigate} />;
+      case "care-guide":
+        return <CareGuidePage navigate={navigate} />;
+      case "shipping":
+        return <ShippingPolicyPage navigate={navigate} />;
       default:
         return <HomePage navigate={navigate} onAddToCart={addToCart} />;
     }
