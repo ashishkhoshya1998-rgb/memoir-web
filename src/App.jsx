@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 
 // ============================================================
 // MEMOIR — Complete Website
-// "Jewellery, memory you can touch."
+// "Jewellery, as a memory you can touch."
 // ============================================================
 
 // --- Data Layer ---
@@ -17,7 +17,7 @@ const PRODUCTS = [
     momentLabel: "New Beginnings",
     hook: "For the woman who just turned the page. A new job, a new city, a new version of herself. This ring holds that quiet courage.",
     gifterHook: "When she's starting something new, this ring says 'I believe in you' without needing the words.",
-    story: "We designed The First Chapter Ring for a specific kind of woman — one who's standing at the start of something new and wants to carry that feeling with her. New beginnings are brave. They deserve to be marked, not just lived through. Wear it daily reminder that you chose to begin.",
+    story: "We designed The First Chapter Ring for a specific kind of woman — one who's standing at the start of something new and wants to carry that feeling with her. New beginnings are brave. They deserve to be marked, not just lived through. Wear it as a daily reminder that you chose to begin.",
     specs: ["925 Sterling Silver", "BIS Hallmarked", "Rhodium Plated", "Adjustable"],
     tags: ["Most gifted for new jobs", "Bestseller"],
     images: [
@@ -210,6 +210,10 @@ const GLOBAL_STYLES = `
     from { opacity: 0; }
     to { opacity: 1; }
   }
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-100%); }
+    to { opacity: 1; transform: translateY(0); }
+  }
   .animate-fade-up { animation: fadeUp 0.7s ease-out forwards; }
   .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
   .stagger-1 { animation-delay: 0.1s; opacity: 0; }
@@ -273,7 +277,7 @@ function Icon({ name, size = 24, filled = false }) {
 }
 
 // --- Header ---
-function Header({ currentPage, navigate, cartCount, onCartClick }) {
+function Header({ currentPage, navigate, cartCount, onCartClick, onSearchClick }) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -327,6 +331,12 @@ function Header({ currentPage, navigate, cartCount, onCartClick }) {
           </nav>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+          <button onClick={onSearchClick} style={{ background: "none", border: "none", cursor: "pointer" }}>
+            <Icon name="search" size={22} />
+          </button>
+          <button onClick={() => navigate("profile")} style={{ background: "none", border: "none", cursor: "pointer" }}>
+            <Icon name="person_outline" size={22} />
+          </button>
           <button onClick={onCartClick} style={{ background: "none", border: "none", cursor: "pointer", position: "relative" }}>
             <Icon name="shopping_bag" size={22} />
             {cartCount > 0 && (
@@ -360,6 +370,20 @@ function Header({ currentPage, navigate, cartCount, onCartClick }) {
               {l.label}
             </button>
           ))}
+          <button
+            onClick={() => { onSearchClick(); setMobileMenuOpen(false); }}
+            className="font-serif"
+            style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18, fontStyle: "italic", color: "var(--charcoal)", textAlign: "left", display: "flex", alignItems: "center", gap: 8 }}
+          >
+            <Icon name="search" size={18} /> Search
+          </button>
+          <button
+            onClick={() => { navigate("profile"); setMobileMenuOpen(false); }}
+            className="font-serif"
+            style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18, fontStyle: "italic", color: "var(--charcoal)", textAlign: "left", display: "flex", alignItems: "center", gap: 8 }}
+          >
+            <Icon name="person_outline" size={18} /> My Account
+          </button>
         </div>
       )}
     </header>
@@ -423,7 +447,7 @@ function HomePage({ navigate }) {
         <div style={{ position: "relative", zIndex: 2, maxWidth: 1280, margin: "0 auto", padding: "0 32px", height: "100%", display: "flex", alignItems: "center" }}>
           <div style={{ maxWidth: 560 }}>
             <p className="font-handwritten animate-fade-up stagger-1" style={{ fontSize: 18, color: "var(--gold)", marginBottom: 16 }}>
-              Jewellery, memory you can touch
+              Jewellery, as a memory you can touch
             </p>
             <h1 className="font-serif animate-fade-up stagger-2" style={{ fontSize: "clamp(36px, 5vw, 56px)", lineHeight: 1.1, fontWeight: 400, color: "var(--charcoal)", marginBottom: 20 }}>
               Designed around the<br />moments that matter
@@ -735,7 +759,7 @@ function ProductPage({ productId, navigate, onAddToCart }) {
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   <Icon name="redeem" size={20} />
                   <div>
-                    <p style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>Send</p>
+                    <p style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>Send as Gift</p>
                     <p style={{ fontSize: 10, color: "var(--on-surface-variant)" }}>Includes handwritten story note & premium box</p>
                   </div>
                 </div>
@@ -840,7 +864,7 @@ function ProductPage({ productId, navigate, onAddToCart }) {
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 32 }} className="unbox-grid">
           {[
-            { step: "01", title: "The Opening", subtitle: "The Ink-Pressed Box", desc: "A heavy, linen-textured box sealed with care, ensuring the moment feels metal inside.", img: PRODUCTS[1].images[0] },
+            { step: "01", title: "The Opening", subtitle: "The Ink-Pressed Box", desc: "A heavy, linen-textured box sealed with care, ensuring the moment feels as permanent as the metal inside.", img: PRODUCTS[1].images[0] },
             { step: "02", title: "The Narrative", subtitle: "The Story Card", desc: "Each piece comes with a hand-lettered card detailing its emotional inspiration — the story that makes it hers.", img: PRODUCTS[3].images[1], offset: 32 },
             { step: "03", title: "The Heirloom", subtitle: "The First Glimpse", desc: "Protected by silk velvet, the silver is polished one final time before shipment to ensure a mirror-like reveal.", img: PRODUCTS[4].images[2], offset: 64 },
           ].map((item) => (
@@ -1043,7 +1067,7 @@ function AboutPage({ navigate }) {
               {[
                 { title: "Real Silver, Always", desc: "Every Memoir piece is 925 sterling silver with BIS hallmarking. No plated brass, no compromises. Premium rhodium plating ensures it stays beautiful through daily wear." },
                 { title: "Designed for Moments", desc: "We don't chase trends. Each piece is designed around a specific life moment — a new beginning, an achievement, a quiet promise. The design serves the emotion, not the other way around." },
-                { title: "Gifting First-Class Experience", desc: "We built the entire gifting experience from scratch — the box, the story card, the personal message, the price-hidden packaging. Because giving a gift should feel one." },
+                { title: "Gifting as a First-Class Experience", desc: "We built the entire gifting experience from scratch — the box, the story card, the personal message, the price-hidden packaging. Because giving a gift should feel as good as receiving one." },
               ].map((item) => (
                 <div key={item.title}>
                   <h3 style={{ fontSize: 14, letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 700, marginBottom: 8 }}>{item.title}</h3>
@@ -1101,7 +1125,7 @@ function CareGuidePage({ navigate }) {
           {/* Intro */}
           <div>
             <p className="font-serif" style={{ fontSize: 20, fontStyle: "italic", lineHeight: 1.8, color: "var(--primary)" }}>
-              Every Memoir piece is crafted from 925 sterling silver with rhodium plating. With a little care, your jewellery will stay moment it represents.
+              Every Memoir piece is crafted from 925 sterling silver with rhodium plating. With a little care, your jewellery will stay as beautiful as the moment it represents.
             </p>
           </div>
 
@@ -1305,7 +1329,7 @@ function ShippingPolicyPage({ navigate }) {
 
             <div style={{ display: "flex", flexDirection: "column", gap: 20, marginBottom: 32 }}>
               <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--on-surface-variant)" }}>
-                We understand that sometimes a piece doesn&apos;t feel right. Our return policy is designed to make the process.
+                We understand that sometimes a piece doesn&apos;t feel right. Our return policy is designed to make the process as seamless as possible.
               </p>
 
               <h3 style={{ fontSize: 14, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" }}>How to Return</h3>
@@ -1352,7 +1376,7 @@ function ShippingPolicyPage({ navigate }) {
             <div>
               {[
                 { q: "Do you ship internationally?", a: "Currently, we only ship within India. International shipping is coming soon — sign up for our newsletter to be the first to know." },
-                { q: "Can I change my delivery address after placing an order?", a: "Yes, order hasn't been shipped yet. Reach out to us at hello@memoir.in and we'll update it for you." },
+                { q: "Can I change my delivery address after placing an order?", a: "Yes, as long as the order hasn't been shipped yet. Reach out to us at hello@memoir.in and we'll update it for you." },
                 { q: "What if my order arrives damaged?", a: "We're truly sorry if this happens. Contact us within 48 hours of delivery with photos, and we'll send a replacement immediately at no extra cost." },
                 { q: "Can I return a gift order?", a: "Yes. The recipient can initiate a return by contacting us directly. The refund will be processed to the original buyer's payment method." },
                 { q: "Do you offer express shipping?", a: "Not at this time. Our standard shipping (4-7 business days) ensures every piece is carefully inspected and beautifully packaged before it reaches you." },
@@ -1478,6 +1502,358 @@ function CartDrawer({ isOpen, onClose, cart, navigate, onRemoveFromCart }) {
   );
 }
 
+// --- Search Overlay ---
+function SearchOverlay({ isOpen, onClose, navigate }) {
+  const [query, setQuery] = useState("");
+  const inputRef = { current: null };
+
+  useEffect(() => {
+    if (isOpen) {
+      setQuery("");
+      setTimeout(() => inputRef.current?.focus(), 100);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    const handler = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  const results = query.trim().length > 1
+    ? PRODUCTS.filter((p) => {
+        const q = query.toLowerCase();
+        return p.name.toLowerCase().includes(q) || p.type.toLowerCase().includes(q) ||
+          p.hook.toLowerCase().includes(q) || p.momentLabel.toLowerCase().includes(q) ||
+          p.tags.some((t) => t.toLowerCase().includes(q));
+      })
+    : [];
+
+  if (!isOpen) return null;
+
+  return (
+    <>
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 59, animation: "fadeIn 0.3s ease" }} />
+      <div style={{
+        position: "fixed", top: 0, left: 0, right: 0, maxHeight: "80vh", background: "var(--ivory)", zIndex: 60,
+        transform: "translateY(0)", animation: "slideDown 0.3s ease", overflowY: "auto",
+        boxShadow: "0 8px 40px rgba(0,0,0,0.15)",
+      }}>
+        <div style={{ maxWidth: 800, margin: "0 auto", padding: "48px 32px 32px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32 }}>
+            <span className="font-serif" style={{ fontSize: 14, fontStyle: "italic", color: "var(--on-surface-variant)" }}>Search Memoir</span>
+            <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer" }}>
+              <Icon name="close" size={24} />
+            </button>
+          </div>
+          <input
+            ref={(el) => { inputRef.current = el; }}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search for a memory..."
+            className="font-serif"
+            style={{
+              width: "100%", fontSize: 28, fontStyle: "italic", background: "none", border: "none",
+              borderBottom: "2px solid var(--gold)", paddingBottom: 12, outline: "none",
+              color: "var(--charcoal)", letterSpacing: "0.01em",
+            }}
+          />
+          {query.trim().length > 1 && (
+            <div style={{ marginTop: 32 }}>
+              {results.length > 0 ? (
+                <>
+                  <p style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", fontWeight: 600, marginBottom: 20, color: "var(--on-surface-variant)" }}>
+                    {results.length} piece{results.length !== 1 ? "s" : ""} found
+                  </p>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 20 }}>
+                    {results.map((product) => (
+                      <div
+                        key={product.id}
+                        onClick={() => { navigate("product", product.id); onClose(); }}
+                        style={{ cursor: "pointer", display: "flex", gap: 16, padding: 12, borderRadius: 8, transition: "background 0.2s" }}
+                        className="hover-lift"
+                      >
+                        <img
+                          src={product.images[0]}
+                          alt={product.name}
+                          style={{ width: 72, height: 72, objectFit: "cover", borderRadius: 6 }}
+                        />
+                        <div>
+                          <p className="font-serif" style={{ fontSize: 16, fontStyle: "italic", marginBottom: 4 }}>{product.name}</p>
+                          <p style={{ fontSize: 11, color: "var(--on-surface-variant)", marginBottom: 4 }}>{product.type} · {product.momentLabel}</p>
+                          <p style={{ fontSize: 14, fontWeight: 500 }}>{formatPrice(product.price)}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <p className="font-serif" style={{ fontSize: 18, fontStyle: "italic", color: "var(--on-surface-variant)", textAlign: "center", padding: "40px 0" }}>
+                  No pieces found for "{query}"
+                </p>
+              )}
+            </div>
+          )}
+          {query.trim().length <= 1 && (
+            <div style={{ marginTop: 32 }}>
+              <p style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", fontWeight: 600, marginBottom: 16, color: "var(--on-surface-variant)" }}>Popular searches</p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {["Ring", "Pendant", "Bracelet", "New Beginnings", "Gift", "Earrings"].map((term) => (
+                  <button
+                    key={term}
+                    onClick={() => setQuery(term)}
+                    style={{
+                      padding: "8px 16px", background: "var(--surface-dim)", border: "1px solid var(--outline-variant)",
+                      borderRadius: 20, fontSize: 13, cursor: "pointer", color: "var(--charcoal)",
+                    }}
+                    className="font-serif"
+                  >
+                    {term}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+// --- Profile Page ---
+const MOCK_ORDERS = [
+  { id: "MEM-2026-001", date: "March 15, 2026", status: "Delivered", items: [PRODUCTS[0]], total: 2499 },
+  { id: "MEM-2026-002", date: "February 28, 2026", status: "In Transit", items: [PRODUCTS[1], PRODUCTS[3]], total: 4498 },
+  { id: "MEM-2026-003", date: "January 10, 2026", status: "Delivered", items: [PRODUCTS[5]], total: 3499 },
+];
+
+const MOCK_ADDRESSES = [
+  { label: "Home", line1: "42 Bandra West", line2: "Mumbai, MH 400050", isDefault: true },
+  { label: "Office", line1: "WeWork BKC, G Block", line2: "Mumbai, MH 400051", isDefault: false },
+];
+
+function ProfilePage({ navigate }) {
+  const [activeTab, setActiveTab] = useState("orders");
+  const tabs = [
+    { id: "orders", label: "Orders", icon: "receipt_long" },
+    { id: "wishlist", label: "Wishlist", icon: "favorite" },
+    { id: "addresses", label: "Addresses", icon: "location_on" },
+    { id: "settings", label: "Settings", icon: "settings" },
+  ];
+
+  return (
+    <div style={{ paddingTop: 80 }}>
+      {/* Profile Header */}
+      <div style={{ background: "var(--surface-dim)", padding: "48px 32px" }}>
+        <div style={{ maxWidth: 900, margin: "0 auto", display: "flex", alignItems: "center", gap: 24 }}>
+          <div style={{
+            width: 80, height: 80, borderRadius: "50%", background: "linear-gradient(135deg, var(--gold) 0%, var(--primary) 100%)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <Icon name="person" size={36} color="white" />
+          </div>
+          <div>
+            <h1 className="font-serif" style={{ fontSize: 28, fontWeight: 400, marginBottom: 4 }}>Priya Sharma</h1>
+            <p style={{ fontSize: 13, color: "var(--on-surface-variant)" }}>priya.sharma@email.com</p>
+            <p style={{ fontSize: 11, color: "var(--gold)", marginTop: 4, letterSpacing: "0.1em", textTransform: "uppercase" }}>Member since January 2026</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Tab Navigation */}
+      <div style={{ borderBottom: "1px solid var(--outline-variant)", position: "sticky", top: 64, background: "var(--ivory)", zIndex: 10 }}>
+        <div style={{ maxWidth: 900, margin: "0 auto", display: "flex", gap: 0, overflowX: "auto" }}>
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              style={{
+                flex: 1, padding: "16px 20px", background: "none", border: "none", cursor: "pointer",
+                borderBottom: activeTab === tab.id ? "2px solid var(--primary)" : "2px solid transparent",
+                color: activeTab === tab.id ? "var(--charcoal)" : "var(--on-surface-variant)",
+                fontSize: 12, letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: activeTab === tab.id ? 600 : 400,
+                transition: "all 0.2s", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, whiteSpace: "nowrap",
+              }}
+            >
+              <Icon name={tab.icon} size={18} /> {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Tab Content */}
+      <div style={{ maxWidth: 900, margin: "0 auto", padding: "40px 32px" }}>
+        {/* Orders Tab */}
+        {activeTab === "orders" && (
+          <div>
+            <h2 className="font-serif" style={{ fontSize: 22, fontWeight: 400, marginBottom: 24 }}>Order History</h2>
+            {MOCK_ORDERS.map((order) => (
+              <div key={order.id} style={{
+                border: "1px solid var(--outline-variant)", borderRadius: 12, padding: 24, marginBottom: 16,
+                background: "white",
+              }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
+                  <div>
+                    <p style={{ fontSize: 14, fontWeight: 600, marginBottom: 2 }}>{order.id}</p>
+                    <p style={{ fontSize: 12, color: "var(--on-surface-variant)" }}>{order.date}</p>
+                  </div>
+                  <span style={{
+                    padding: "4px 12px", borderRadius: 20, fontSize: 11, fontWeight: 600, letterSpacing: "0.05em",
+                    background: order.status === "Delivered" ? "rgba(201,169,110,0.15)" : "rgba(117,89,57,0.1)",
+                    color: order.status === "Delivered" ? "var(--gold)" : "var(--primary)",
+                  }}>
+                    {order.status}
+                  </span>
+                </div>
+                <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
+                  {order.items.map((item) => (
+                    <div
+                      key={item.id}
+                      onClick={() => navigate("product", item.id)}
+                      style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 12 }}
+                    >
+                      <img src={item.images[0]} alt={item.name} style={{ width: 56, height: 56, objectFit: "cover", borderRadius: 8 }} />
+                      <div>
+                        <p className="font-serif" style={{ fontSize: 14, fontStyle: "italic" }}>{item.name}</p>
+                        <p style={{ fontSize: 12, color: "var(--on-surface-variant)" }}>{item.type}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--outline-variant)", paddingTop: 12 }}>
+                  <span style={{ fontSize: 12, color: "var(--on-surface-variant)" }}>Total</span>
+                  <span style={{ fontSize: 16, fontWeight: 500 }}>{formatPrice(order.total)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Wishlist Tab */}
+        {activeTab === "wishlist" && (
+          <div>
+            <h2 className="font-serif" style={{ fontSize: 22, fontWeight: 400, marginBottom: 24 }}>Your Wishlist</h2>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 24 }}>
+              {[PRODUCTS[0], PRODUCTS[2], PRODUCTS[4]].map((product) => (
+                <div key={product.id} style={{
+                  border: "1px solid var(--outline-variant)", borderRadius: 12, overflow: "hidden", background: "white",
+                  cursor: "pointer", transition: "transform 0.2s",
+                }} className="hover-lift" onClick={() => navigate("product", product.id)}>
+                  <img src={product.images[0]} alt={product.name} style={{ width: "100%", height: 200, objectFit: "cover" }} />
+                  <div style={{ padding: 16 }}>
+                    <p className="font-serif" style={{ fontSize: 18, fontStyle: "italic", marginBottom: 4 }}>{product.name}</p>
+                    <p style={{ fontSize: 12, color: "var(--on-surface-variant)", marginBottom: 8 }}>{product.type} · {product.momentLabel}</p>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: 16, fontWeight: 500 }}>{formatPrice(product.price)}</span>
+                      <button style={{ background: "none", border: "none", cursor: "pointer", color: "var(--gold)" }}>
+                        <Icon name="favorite" size={20} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Addresses Tab */}
+        {activeTab === "addresses" && (
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+              <h2 className="font-serif" style={{ fontSize: 22, fontWeight: 400 }}>Saved Addresses</h2>
+              <button style={{
+                padding: "10px 20px", background: "none", border: "1px solid var(--primary)", color: "var(--primary)",
+                fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", fontWeight: 600, cursor: "pointer", borderRadius: 4,
+                display: "flex", alignItems: "center", gap: 6,
+              }}>
+                <Icon name="add" size={16} /> Add Address
+              </button>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
+              {MOCK_ADDRESSES.map((addr) => (
+                <div key={addr.label} style={{
+                  border: addr.isDefault ? "2px solid var(--gold)" : "1px solid var(--outline-variant)",
+                  borderRadius: 12, padding: 24, background: "white", position: "relative",
+                }}>
+                  {addr.isDefault && (
+                    <span style={{
+                      position: "absolute", top: 12, right: 12, padding: "3px 10px", background: "var(--gold)", color: "white",
+                      fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", borderRadius: 10,
+                    }}>Default</span>
+                  )}
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                    <Icon name="location_on" size={18} color="var(--primary)" />
+                    <p style={{ fontSize: 14, fontWeight: 600 }}>{addr.label}</p>
+                  </div>
+                  <p style={{ fontSize: 14, color: "var(--on-surface-variant)", lineHeight: 1.6 }}>
+                    {addr.line1}<br />{addr.line2}
+                  </p>
+                  <div style={{ display: "flex", gap: 16, marginTop: 16 }}>
+                    <button style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "var(--primary)", fontWeight: 500 }}>Edit</button>
+                    <button style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "var(--on-surface-variant)" }}>Delete</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Settings Tab */}
+        {activeTab === "settings" && (
+          <div>
+            <h2 className="font-serif" style={{ fontSize: 22, fontWeight: 400, marginBottom: 24 }}>Account Settings</h2>
+            <div style={{ background: "white", border: "1px solid var(--outline-variant)", borderRadius: 12, overflow: "hidden" }}>
+              {[
+                { label: "Full Name", value: "Priya Sharma" },
+                { label: "Email", value: "priya.sharma@email.com" },
+                { label: "Phone", value: "+91 98765 43210" },
+              ].map((field, i) => (
+                <div key={field.label} style={{
+                  padding: "20px 24px", display: "flex", justifyContent: "space-between", alignItems: "center",
+                  borderBottom: i < 2 ? "1px solid var(--outline-variant)" : "none",
+                }}>
+                  <div>
+                    <p style={{ fontSize: 11, color: "var(--on-surface-variant)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 4 }}>{field.label}</p>
+                    <p style={{ fontSize: 15 }}>{field.value}</p>
+                  </div>
+                  <button style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "var(--primary)", fontWeight: 500 }}>Edit</button>
+                </div>
+              ))}
+            </div>
+
+            <div style={{
+              background: "white", border: "1px solid var(--outline-variant)", borderRadius: 12, padding: "20px 24px", marginTop: 16,
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+            }}>
+              <div>
+                <p style={{ fontSize: 14, fontWeight: 500, marginBottom: 2 }}>Email Notifications</p>
+                <p style={{ fontSize: 12, color: "var(--on-surface-variant)" }}>Receive updates on new collections and offers</p>
+              </div>
+              <div style={{
+                width: 44, height: 24, borderRadius: 12, background: "var(--gold)", cursor: "pointer", position: "relative",
+                transition: "background 0.2s",
+              }}>
+                <div style={{
+                  width: 20, height: 20, borderRadius: "50%", background: "white", position: "absolute", top: 2, right: 2,
+                  transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                }} />
+              </div>
+            </div>
+
+            <button style={{
+              marginTop: 32, padding: "14px 32px", background: "none", border: "1px solid var(--primary)",
+              color: "var(--primary)", fontSize: 12, letterSpacing: "0.15em", textTransform: "uppercase", fontWeight: 600,
+              cursor: "pointer", borderRadius: 4, width: "100%",
+            }}>
+              Sign Out
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // --- Footer ---
 function Footer({ navigate }) {
   return (
@@ -1485,7 +1861,7 @@ function Footer({ navigate }) {
       <div style={{ maxWidth: 1280, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 48 }}>
         <div>
           <span className="font-serif" style={{ fontSize: 24, fontStyle: "italic", display: "block", marginBottom: 12 }}>Memoir</span>
-          <p style={{ fontSize: 13, color: "var(--on-surface-variant)", lineHeight: 1.7 }}>Jewellery, memory you can touch.</p>
+          <p style={{ fontSize: 13, color: "var(--on-surface-variant)", lineHeight: 1.7 }}>Jewellery, as a memory you can touch.</p>
           <p style={{ fontSize: 12, color: "var(--on-surface-variant)", marginTop: 16, opacity: 0.6 }}>&copy; 2026 Memoir. Crafted for moments that matter.</p>
         </div>
         <div>
@@ -1503,6 +1879,7 @@ function Footer({ navigate }) {
             { label: "Care Guide", page: "care-guide" },
             { label: "Shipping Policy", page: "shipping" },
             { label: "Returns & Exchange", page: "shipping" },
+            { label: "My Account", page: "profile" },
           ].map((item) => (
             <button key={item.label} onClick={() => navigate(item.page)} className="font-serif line-reveal" style={{ display: "block", background: "none", border: "none", cursor: "pointer", fontSize: 15, color: "var(--on-surface-variant)", marginBottom: 10, paddingBottom: 2 }}>
               {item.label}
@@ -1535,6 +1912,7 @@ export default function App() {
   const [pageParam, setPageParam] = useState(null);
   const [cart, setCart] = useState([]);
   const [cartOpen, setCartOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const navigate = useCallback((page, param = null) => {
     setCurrentPage(page);
@@ -1569,6 +1947,8 @@ export default function App() {
         return <CareGuidePage navigate={navigate} />;
       case "shipping":
         return <ShippingPolicyPage navigate={navigate} />;
+      case "profile":
+        return <ProfilePage navigate={navigate} />;
       default:
         return <HomePage navigate={navigate} onAddToCart={addToCart} />;
     }
@@ -1578,10 +1958,11 @@ export default function App() {
     <>
       <style>{GLOBAL_STYLES}</style>
       <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
-      <Header currentPage={currentPage} navigate={navigate} cartCount={cart.length} onCartClick={() => setCartOpen(true)} />
+      <Header currentPage={currentPage} navigate={navigate} cartCount={cart.length} onCartClick={() => setCartOpen(true)} onSearchClick={() => setSearchOpen(true)} />
       <main>{renderPage()}</main>
       <Footer navigate={navigate} />
       <CartDrawer isOpen={cartOpen} onClose={() => setCartOpen(false)} cart={cart} navigate={navigate} onRemoveFromCart={removeFromCart} />
+      <SearchOverlay isOpen={searchOpen} onClose={() => setSearchOpen(false)} navigate={navigate} />
     </>
   );
 }
