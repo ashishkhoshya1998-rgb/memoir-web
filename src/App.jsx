@@ -961,7 +961,7 @@ function GiftGuidePage({ navigate }) {
               <Icon name="arrow_back" size={16} /> Back
             </button>
             <h1 className="font-serif" style={{ fontSize: 32, fontWeight: 400, marginBottom: 8 }}>
-              Here&apos;s what we&apos;d recommend for {relationshipCopy[relationship!]}
+              Here&apos;s what we&apos;d recommend for {relationshipCopy[relationship]}
             </h1>
             <p style={{ fontSize: 14, color: "var(--on-surface-variant)", marginBottom: 40 }}>Each piece arrives gift-wrapped with a personal message card.</p>
             <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
