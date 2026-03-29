@@ -3,8 +3,9 @@
   "configurations": [
     {
       "name": "Memoir Dev Server",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["vite", "--port", "5176"],
+      "cwd": "Memoir App",
       "port": 5176
     }
   ]
