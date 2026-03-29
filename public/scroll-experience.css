@@ -1,0 +1,247 @@
+/* ── Scroll Experience — Memoir Theme ── */
+.se-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: var(--ivory, #F5F0EB);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.se-overlay.se-active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Close button — top right */
+.se-close {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  z-index: 10;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: none;
+  color: var(--on-surface-variant, #8a7e72);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.3s;
+  font-family: 'DM Sans', sans-serif;
+}
+.se-close:hover {
+  color: var(--charcoal, #3A3027);
+}
+
+/* Counter — top left */
+.se-counter {
+  position: absolute;
+  top: 24px;
+  left: 28px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--on-surface-variant, #8a7e72);
+  z-index: 10;
+}
+.se-counter strong {
+  color: var(--charcoal, #3A3027);
+  font-weight: 600;
+}
+
+/* ── Centered player container ── */
+.se-player {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  width: 100%;
+  max-width: 1080px;
+  padding: 0 24px;
+}
+
+/* Video box */
+.se-video-box {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  box-shadow: 0 8px 40px rgba(58, 48, 39, 0.12);
+}
+.se-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Progress bar — thin gold line under video */
+.se-progress-track {
+  width: 100%;
+  height: 2px;
+  background: var(--outline-variant, #D2C4B8);
+}
+.se-progress-bar {
+  height: 100%;
+  background: var(--gold, #C9A96E);
+  width: 0%;
+  transition: width 0.08s linear;
+}
+
+/* ── Controls — below video ── */
+.se-controls {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 24px;
+  gap: 16px;
+}
+
+/* Category name + scene */
+.se-info {
+  text-align: center;
+}
+.se-category-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(24px, 3.5vw, 36px);
+  font-weight: 400;
+  color: var(--charcoal, #3A3027);
+  margin: 0 0 4px 0;
+  line-height: 1.2;
+}
+.se-scene-text {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: var(--on-surface-variant, #8a7e72);
+  letter-spacing: 0.03em;
+  margin: 0;
+}
+
+/* Pills — horizontal, centered */
+.se-pills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.se-pill {
+  padding: 10px 20px;
+  border: 1px solid var(--outline-variant, #D2C4B8);
+  background: transparent;
+  color: var(--on-surface-variant, #8a7e72);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+.se-pill:hover {
+  border-color: var(--charcoal, #3A3027);
+  color: var(--charcoal, #3A3027);
+}
+.se-pill.se-pill-active {
+  background: var(--primary, #6B5132);
+  border-color: var(--primary, #6B5132);
+  color: white;
+}
+
+/* Overall segment progress */
+.se-segments {
+  display: flex;
+  gap: 4px;
+  width: 100%;
+  max-width: 320px;
+}
+.se-seg {
+  flex: 1;
+  height: 2px;
+  background: var(--outline-variant, #D2C4B8);
+  position: relative;
+  overflow: hidden;
+}
+.se-seg-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 0%;
+  background: var(--gold, #C9A96E);
+  transition: width 0.08s linear;
+}
+
+/* Scroll hint */
+.se-scroll-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0.5;
+  animation: se-hint-pulse 2.5s ease-in-out infinite;
+  pointer-events: none;
+}
+.se-scroll-hint span {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--on-surface-variant, #8a7e72);
+}
+
+@keyframes se-hint-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.8; }
+}
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .se-close {
+    top: 12px;
+    right: 16px;
+    width: 36px;
+    height: 36px;
+    font-size: 20px;
+  }
+  .se-counter {
+    top: 16px;
+    left: 20px;
+    font-size: 10px;
+  }
+  .se-player {
+    max-width: 100%;
+    padding: 0 16px;
+  }
+  .se-video-box {
+    aspect-ratio: 4 / 3;
+  }
+  .se-controls {
+    padding-top: 16px;
+    gap: 12px;
+  }
+  .se-category-name {
+    font-size: 22px;
+  }
+  .se-scene-text {
+    font-size: 11px;
+  }
+  .se-pills {
+    gap: 6px;
+  }
+  .se-pill {
+    padding: 8px 14px;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+  }
+  .se-scroll-hint {
+    display: none;
+  }
+}
