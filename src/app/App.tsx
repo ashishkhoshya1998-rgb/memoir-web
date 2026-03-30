@@ -1186,82 +1186,83 @@ function ProductPage({ productId, navigate, onAddToCart }: {
 
               {/* Gift Message */}
               {isGift && (
-                <div className="animate-fade-in" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                  {/* Suggestion chips */}
-                  <div>
-                    <p style={{ fontSize: 10, color: "var(--on-surface-variant)", opacity: 0.5, marginBottom: 8, letterSpacing: "0.08em", textTransform: "uppercase" }}>
-                      Choose a message or write your own
-                    </p>
-                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                      {[
-                        "For your new beginning. I\u2019m so proud of you.",
-                        "Because you deserve something beautiful.",
-                        "I chose this for the same reason I chose you.",
-                      ].map((msg) => (
-                        <button
-                          key={msg}
-                          onClick={() => setGiftMessage(msg)}
-                          style={{
-                            padding: "7px 14px", fontSize: 11, borderRadius: 20,
-                            border: giftMessage === msg ? "1px solid var(--gold)" : "1px solid rgba(210,196,184,0.4)",
-                            background: giftMessage === msg ? "rgba(201,169,110,0.1)" : "transparent",
-                            color: giftMessage === msg ? "var(--primary)" : "var(--on-surface-variant)",
-                            cursor: "pointer", transition: "all 0.2s ease",
-                            fontFamily: "'Cormorant Garamond', serif", fontStyle: "italic",
-                            lineHeight: 1.3,
-                          }}
-                        >
-                          {msg}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Handwritten note card */}
+                <div className="animate-fade-in" style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                  {/* Cream deckled-edge note card */}
                   <div style={{
-                    position: "relative", padding: "28px 24px 20px",
-                    background: `
-                      linear-gradient(to bottom, rgba(248,244,236,0.6) 0%, rgba(244,238,226,0.8) 100%)
-                    `,
-                    backgroundImage: `
-                      repeating-linear-gradient(
-                        transparent, transparent 31px, rgba(186,171,151,0.18) 31px, rgba(186,171,151,0.18) 32px
-                      )
-                    `,
-                    backgroundPosition: "0 27px",
-                    border: "none",
-                    boxShadow: "0 1px 4px rgba(0,0,0,0.06), inset 0 0 40px rgba(210,196,174,0.12)",
-                    borderRadius: 2,
+                    position: "relative",
+                    background: "linear-gradient(170deg, #f7f3ea 0%, #f2ede3 40%, #ede7db 100%)",
+                    padding: "30px 28px 24px",
+                    boxShadow: "0 3px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06)",
                     overflow: "hidden",
+                    /* Deckled / torn edges */
+                    clipPath: `polygon(
+                      0% 3px, 2% 0%, 5% 4px, 8% 1px, 12% 3px, 16% 0%, 20% 2px, 24% 0%, 29% 4px, 34% 1px, 38% 3px, 43% 0%, 48% 2px, 53% 0%, 58% 3px, 62% 1px, 67% 4px, 72% 0%, 77% 3px, 82% 1px, 87% 0%, 91% 3px, 95% 0%, 98% 2px, 100% 0%,
+                      100% calc(100% - 3px), 98% 100%, 95% calc(100% - 3px), 91% 100%, 87% calc(100% - 2px), 82% 100%, 77% calc(100% - 3px), 72% 100%, 67% calc(100% - 2px), 62% 100%, 58% calc(100% - 4px), 53% 100%, 48% calc(100% - 2px), 43% 100%, 38% calc(100% - 3px), 34% 100%, 29% calc(100% - 2px), 24% 100%, 20% calc(100% - 4px), 16% 100%, 12% calc(100% - 2px), 8% 100%, 5% calc(100% - 3px), 2% 100%, 0% calc(100% - 2px)
+                    )`,
                   }}>
-                    {/* Torn edge top */}
+                    {/* Paper grain texture */}
                     <div style={{
-                      position: "absolute", top: 0, left: 0, right: 0, height: 4,
-                      background: "linear-gradient(90deg, rgba(201,169,110,0.25) 0%, rgba(201,169,110,0.08) 50%, rgba(201,169,110,0.2) 100%)",
+                      position: "absolute", inset: 0, opacity: 0.04,
+                      backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='6' height='6' viewBox='0 0 6 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23000' fill-opacity='1' fill-rule='evenodd'%3E%3Cpath d='M5 0h1L0 6V5zM6 5v1H5z'/%3E%3C/svg%3E\")",
+                      pointerEvents: "none",
                     }} />
-                    {/* Left margin line */}
+                    {/* Subtle warm inner shadow for depth */}
                     <div style={{
-                      position: "absolute", top: 0, bottom: 0, left: 18,
-                      width: 1, background: "rgba(195,130,130,0.15)",
+                      position: "absolute", inset: 0, pointerEvents: "none",
+                      boxShadow: "inset 0 0 30px rgba(200,185,160,0.12), inset 0 2px 4px rgba(180,160,130,0.08)",
                     }} />
                     <textarea
                       value={giftMessage}
                       onChange={(e) => setGiftMessage(e.target.value)}
                       placeholder="Write something she'll keep forever..."
-                      rows={4}
+                      rows={3}
                       style={{
-                        width: "100%", padding: "0 0 0 12px", border: "none",
-                        background: "transparent", fontSize: 16,
+                        width: "100%", padding: 0, border: "none",
+                        background: "transparent", fontSize: 18,
                         fontFamily: "'Caveat', cursive",
-                        resize: "none", lineHeight: "32px", color: "#4a3f35",
+                        resize: "none", lineHeight: 1.9, color: "#3d3529",
                         outline: "none", letterSpacing: "0.01em",
+                        position: "relative", zIndex: 1,
                       }}
                     />
-                    {/* Bottom fold shadow */}
+                    {/* Tiny Memoir watermark */}
                     <div style={{
-                      position: "absolute", bottom: 0, right: 0, width: 24, height: 24,
-                      background: "linear-gradient(135deg, transparent 50%, rgba(210,196,174,0.2) 50%)",
-                    }} />
+                      position: "absolute", bottom: 10, right: 16,
+                      fontSize: 8, letterSpacing: "0.2em", textTransform: "uppercase",
+                      color: "rgba(180,165,140,0.3)", fontWeight: 600, zIndex: 1,
+                    }}>Memoir</div>
+                  </div>
+
+                  {/* Suggestion options below the card */}
+                  <div style={{ paddingTop: 14 }}>
+                    <p style={{ fontSize: 9, color: "var(--on-surface-variant)", opacity: 0.45, marginBottom: 8, letterSpacing: "0.15em", textTransform: "uppercase" }}>
+                      Or choose a note
+                    </p>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                      {[
+                        "For your new beginning. I\u2019m so proud of you.",
+                        "Because you deserve something beautiful.",
+                        "I chose this for the same reason I chose you.",
+                      ].map((msg, i) => (
+                        <button
+                          key={msg}
+                          onClick={() => setGiftMessage(msg)}
+                          style={{
+                            padding: "9px 0", fontSize: 13, border: "none",
+                            borderBottom: i < 2 ? "1px solid rgba(210,196,184,0.2)" : "none",
+                            background: "transparent",
+                            color: giftMessage === msg ? "var(--primary)" : "var(--on-surface-variant)",
+                            cursor: "pointer", transition: "all 0.2s ease",
+                            fontFamily: "'Cormorant Garamond', serif", fontStyle: "italic",
+                            textAlign: "left", display: "flex", alignItems: "center", gap: 8,
+                            fontWeight: giftMessage === msg ? 600 : 400, opacity: giftMessage === msg ? 1 : 0.7,
+                          }}
+                        >
+                          <span style={{ width: 4, height: 4, borderRadius: "50%", background: giftMessage === msg ? "var(--gold)" : "rgba(210,196,184,0.4)", flexShrink: 0, transition: "background 0.2s" }} />
+                          {msg}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}
