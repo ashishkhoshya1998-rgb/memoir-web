@@ -2866,9 +2866,6 @@ function ProfilePage({ navigate }: { navigate: (page: string, param?: string | n
     { id: "addresses", label: "Addresses", icon: "location_on" },
     { id: "settings", label: "Settings", icon: "settings" },
     { id: "orders", label: "Orders", icon: "receipt_long" },
-    { id: "wishlist", label: "Wishlist", icon: "favorite" },
-    { id: "addresses", label: "Addresses", icon: "location_on" },
-    { id: "settings", label: "Settings", icon: "settings" },
   ];
 
   return (
