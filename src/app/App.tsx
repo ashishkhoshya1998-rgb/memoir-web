@@ -216,6 +216,350 @@ const useStore = () => useContext(StoreContext);
 // --- Utility ---
 const formatPrice = (p: number) => `\u20B9${p.toLocaleString("en-IN")}`;
 
+// --- Auth & User Persistence Layer ---
+interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  createdAt: string;
+}
+
+interface SavedAddress {
+  id: string;
+  label: string;
+  name: string;
+  phone: string;
+  line1: string;
+  line2: string;
+  city: string;
+  state: string;
+  pincode: string;
+  isDefault: boolean;
+}
+
+interface UserData {
+  profile: UserProfile;
+  wishlist: string[]; // product IDs
+  addresses: SavedAddress[];
+  cart: CartItem[];
+}
+
+const AUTH_KEY = "memoir_auth";
+const USERS_KEY = "memoir_users";
+
+function getStoredUsers(): Record<string, { password: string; data: UserData }> {
+  try { return JSON.parse(localStorage.getItem(USERS_KEY) || "{}"); } catch { return {}; }
+}
+
+function saveStoredUsers(users: Record<string, { password: string; data: UserData }>) {
+  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+}
+
+function getAuthEmail(): string | null {
+  return localStorage.getItem(AUTH_KEY);
+}
+
+function setAuthEmail(email: string | null) {
+  if (email) localStorage.setItem(AUTH_KEY, email);
+  else localStorage.removeItem(AUTH_KEY);
+}
+
+function getUserData(email: string): UserData | null {
+  const users = getStoredUsers();
+  return users[email]?.data || null;
+}
+
+function saveUserData(email: string, data: Partial<UserData>) {
+  const users = getStoredUsers();
+  if (!users[email]) return;
+  users[email].data = { ...users[email].data, ...data };
+  saveStoredUsers(users);
+}
+
+// --- Auth Context ---
+interface AuthContextType {
+  user: UserProfile | null;
+  isLoggedIn: boolean;
+  wishlist: string[];
+  addresses: SavedAddress[];
+  login: (email: string, password: string) => string | null; // returns error or null
+  signup: (name: string, email: string, phone: string, password: string) => string | null;
+  logout: () => void;
+  toggleWishlist: (productId: string) => void;
+  isWishlisted: (productId: string) => boolean;
+  addAddress: (addr: Omit<SavedAddress, "id">) => void;
+  updateAddress: (id: string, addr: Partial<SavedAddress>) => void;
+  deleteAddress: (id: string) => void;
+  setDefaultAddress: (id: string) => void;
+  getDefaultAddress: () => SavedAddress | undefined;
+  updateProfile: (fields: Partial<UserProfile>) => void;
+  savedCart: CartItem[];
+  saveCart: (cart: CartItem[]) => void;
+}
+
+const AuthContext = createContext<AuthContextType>({
+  user: null, isLoggedIn: false, wishlist: [], addresses: [],
+  login: () => "Not initialized", signup: () => "Not initialized",
+  logout: () => {}, toggleWishlist: () => {}, isWishlisted: () => false,
+  addAddress: () => {}, updateAddress: () => {}, deleteAddress: () => {},
+  setDefaultAddress: () => {}, getDefaultAddress: () => undefined,
+  updateProfile: () => {}, savedCart: [], saveCart: () => {},
+});
+const useAuth = () => useContext(AuthContext);
+
+function useAuthProvider() {
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [wishlist, setWishlist] = useState<string[]>([]);
+  const [addresses, setAddresses] = useState<SavedAddress[]>([]);
+  const [savedCart, setSavedCart] = useState<CartItem[]>([]);
+
+  // Restore session on mount
+  useEffect(() => {
+    const email = getAuthEmail();
+    if (!email) return;
+    const data = getUserData(email);
+    if (data) {
+      setUser(data.profile);
+      setWishlist(data.wishlist || []);
+      setAddresses(data.addresses || []);
+      setSavedCart(data.cart || []);
+    }
+  }, []);
+
+  const login = useCallback((email: string, password: string): string | null => {
+    const users = getStoredUsers();
+    const entry = users[email.toLowerCase()];
+    if (!entry) return "No account found with this email";
+    if (entry.password !== password) return "Incorrect password";
+    setAuthEmail(email.toLowerCase());
+    setUser(entry.data.profile);
+    setWishlist(entry.data.wishlist || []);
+    setAddresses(entry.data.addresses || []);
+    setSavedCart(entry.data.cart || []);
+    return null;
+  }, []);
+
+  const signup = useCallback((name: string, email: string, phone: string, password: string): string | null => {
+    const users = getStoredUsers();
+    const key = email.toLowerCase();
+    if (users[key]) return "An account with this email already exists";
+    if (password.length < 6) return "Password must be at least 6 characters";
+    const profile: UserProfile = {
+      id: `user_${Date.now()}`,
+      name, email: key, phone,
+      createdAt: new Date().toISOString(),
+    };
+    users[key] = { password, data: { profile, wishlist: [], addresses: [], cart: [] } };
+    saveStoredUsers(users);
+    setAuthEmail(key);
+    setUser(profile);
+    setWishlist([]);
+    setAddresses([]);
+    setSavedCart([]);
+    return null;
+  }, []);
+
+  const logout = useCallback(() => {
+    setAuthEmail(null);
+    setUser(null);
+    setWishlist([]);
+    setAddresses([]);
+    setSavedCart([]);
+  }, []);
+
+  const toggleWishlist = useCallback((productId: string) => {
+    if (!user) return;
+    setWishlist(prev => {
+      const next = prev.includes(productId) ? prev.filter(id => id !== productId) : [...prev, productId];
+      saveUserData(user.email, { wishlist: next });
+      return next;
+    });
+  }, [user]);
+
+  const isWishlisted = useCallback((productId: string) => wishlist.includes(productId), [wishlist]);
+
+  const addAddress = useCallback((addr: Omit<SavedAddress, "id">) => {
+    if (!user) return;
+    setAddresses(prev => {
+      const newAddr: SavedAddress = { ...addr, id: `addr_${Date.now()}` };
+      if (newAddr.isDefault) prev = prev.map(a => ({ ...a, isDefault: false }));
+      const next = [...prev, newAddr];
+      saveUserData(user.email, { addresses: next });
+      return next;
+    });
+  }, [user]);
+
+  const updateAddress = useCallback((id: string, fields: Partial<SavedAddress>) => {
+    if (!user) return;
+    setAddresses(prev => {
+      let next = prev.map(a => a.id === id ? { ...a, ...fields } : a);
+      if (fields.isDefault) next = next.map(a => ({ ...a, isDefault: a.id === id }));
+      saveUserData(user.email, { addresses: next });
+      return next;
+    });
+  }, [user]);
+
+  const deleteAddress = useCallback((id: string) => {
+    if (!user) return;
+    setAddresses(prev => {
+      const next = prev.filter(a => a.id !== id);
+      saveUserData(user.email, { addresses: next });
+      return next;
+    });
+  }, [user]);
+
+  const setDefaultAddress = useCallback((id: string) => {
+    if (!user) return;
+    setAddresses(prev => {
+      const next = prev.map(a => ({ ...a, isDefault: a.id === id }));
+      saveUserData(user.email, { addresses: next });
+      return next;
+    });
+  }, [user]);
+
+  const getDefaultAddress = useCallback(() => addresses.find(a => a.isDefault) || addresses[0], [addresses]);
+
+  const updateProfile = useCallback((fields: Partial<UserProfile>) => {
+    if (!user) return;
+    const updated = { ...user, ...fields };
+    setUser(updated);
+    saveUserData(user.email, { profile: updated });
+  }, [user]);
+
+  const saveCart = useCallback((cart: CartItem[]) => {
+    if (!user) return;
+    setSavedCart(cart);
+    saveUserData(user.email, { cart });
+  }, [user]);
+
+  return {
+    user, isLoggedIn: !!user, wishlist, addresses,
+    login, signup, logout, toggleWishlist, isWishlisted,
+    addAddress, updateAddress, deleteAddress, setDefaultAddress, getDefaultAddress,
+    updateProfile, savedCart, saveCart,
+  };
+}
+
+// --- Auth Modal ---
+function AuthModal({ isOpen, onClose, initialMode = "login" }: {
+  isOpen: boolean; onClose: () => void; initialMode?: "login" | "signup";
+}) {
+  const [mode, setMode] = useState<"login" | "signup">(initialMode);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const auth = useAuth();
+
+  useEffect(() => { if (isOpen) { setMode(initialMode); setError(""); } }, [isOpen, initialMode]);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    if (mode === "login") {
+      const err = auth.login(email, password);
+      if (err) setError(err); else onClose();
+    } else {
+      if (!name.trim()) { setError("Please enter your name"); return; }
+      if (!email.trim()) { setError("Please enter your email"); return; }
+      const err = auth.signup(name.trim(), email.trim(), phone.trim(), password);
+      if (err) setError(err); else onClose();
+    }
+  };
+
+  const inputStyle = {
+    width: "100%", padding: "14px 16px", border: "1px solid var(--outline-variant)",
+    background: "white", fontSize: 14, fontFamily: "'DM Sans', sans-serif", borderRadius: 0,
+    outline: "none", transition: "border-color 0.2s",
+  };
+
+  return (
+    <>
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1000, backdropFilter: "blur(4px)" }} />
+      <div style={{
+        position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
+        width: "min(420px, 90vw)", background: "var(--ivory)", zIndex: 1001,
+        boxShadow: "0 24px 80px rgba(0,0,0,0.15)", overflow: "hidden",
+      }}>
+        {/* Header */}
+        <div style={{ padding: "32px 32px 0", textAlign: "center" }}>
+          <p style={{ fontSize: 13, letterSpacing: "0.25em", textTransform: "uppercase", color: "var(--gold)", marginBottom: 8, fontWeight: 500 }}>Memoir</p>
+          <h2 className="font-serif" style={{ fontSize: 26, fontWeight: 400, marginBottom: 4 }}>
+            {mode === "login" ? "Welcome Back" : "Create Account"}
+          </h2>
+          <p style={{ fontSize: 13, color: "var(--on-surface-variant)" }}>
+            {mode === "login" ? "Sign in to access your wishlist and orders" : "Join to save your favourites and track orders"}
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} style={{ padding: "24px 32px 32px", display: "flex", flexDirection: "column", gap: 14 }}>
+          {mode === "signup" && (
+            <div>
+              <label style={{ fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--on-surface-variant)", display: "block", marginBottom: 6 }}>Full Name *</label>
+              <input value={name} onChange={e => setName(e.target.value)} placeholder="Your name" style={inputStyle} />
+            </div>
+          )}
+          <div>
+            <label style={{ fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--on-surface-variant)", display: "block", marginBottom: 6 }}>Email *</label>
+            <input value={email} onChange={e => setEmail(e.target.value)} placeholder="you@email.com" type="email" style={inputStyle} />
+          </div>
+          {mode === "signup" && (
+            <div>
+              <label style={{ fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--on-surface-variant)", display: "block", marginBottom: 6 }}>Phone</label>
+              <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+91 98765 43210" style={inputStyle} />
+            </div>
+          )}
+          <div>
+            <label style={{ fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--on-surface-variant)", display: "block", marginBottom: 6 }}>Password *</label>
+            <div style={{ position: "relative" }}>
+              <input value={password} onChange={e => setPassword(e.target.value)} placeholder={mode === "signup" ? "Min 6 characters" : "Your password"} type={showPassword ? "text" : "password"} style={inputStyle} />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} style={{
+                position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
+                background: "none", border: "none", cursor: "pointer", color: "var(--on-surface-variant)",
+              }}>
+                <Icon name={showPassword ? "visibility_off" : "visibility"} size={18} />
+              </button>
+            </div>
+          </div>
+
+          {error && (
+            <p style={{ fontSize: 12, color: "#c0392b", background: "rgba(192,57,43,0.06)", padding: "10px 14px", margin: 0 }}>{error}</p>
+          )}
+
+          <button type="submit" style={{
+            width: "100%", padding: "16px", background: "var(--primary)", color: "white", border: "none",
+            fontSize: 12, letterSpacing: "0.2em", textTransform: "uppercase", fontWeight: 600, cursor: "pointer",
+            marginTop: 4,
+          }}>
+            {mode === "login" ? "Sign In" : "Create Account"}
+          </button>
+
+          <p style={{ textAlign: "center", fontSize: 13, color: "var(--on-surface-variant)", marginTop: 4 }}>
+            {mode === "login" ? "Don\u2019t have an account? " : "Already have an account? "}
+            <button type="button" onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); }}
+              style={{ background: "none", border: "none", color: "var(--primary)", cursor: "pointer", fontSize: 13, fontWeight: 600, textDecoration: "underline" }}>
+              {mode === "login" ? "Sign Up" : "Sign In"}
+            </button>
+          </p>
+        </form>
+
+        {/* Close */}
+        <button onClick={onClose} style={{
+          position: "absolute", top: 16, right: 16, background: "none", border: "none",
+          cursor: "pointer", color: "var(--on-surface-variant)",
+        }}>
+          <Icon name="close" size={22} />
+        </button>
+      </div>
+    </>
+  );
+}
+
 // --- Styles ---
 const GLOBAL_STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap');
@@ -611,6 +955,7 @@ function ProductCard({ product, navigate, onAddToCart, style: cardStyle = {} }: 
   style?: React.CSSProperties;
 }) {
   const [added, setAdded] = useState(false);
+  const auth = useAuth();
 
   const handleQuickAdd = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -621,10 +966,30 @@ function ProductCard({ product, navigate, onAddToCart, style: cardStyle = {} }: 
     }
   };
 
+  const handleWishlist = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    auth.toggleWishlist(product.id);
+  };
+
+  const wishlisted = auth.isWishlisted(product.id);
+
   return (
     <div className="hover-lift" style={{ cursor: "pointer", position: "relative", ...cardStyle }} onClick={() => navigate("product", product.id)}>
       <div className="img-zoom" style={{ aspectRatio: "3/4", background: "var(--surface-container)", marginBottom: 16, position: "relative" }}>
         <img src={product.images[0]} alt={product.name} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        {/* Wishlist heart */}
+        {auth.isLoggedIn && (
+          <button onClick={handleWishlist} aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"} style={{
+            position: "absolute", top: 12, right: 12, width: 36, height: 36,
+            background: "rgba(255,255,255,0.85)", backdropFilter: "blur(4px)",
+            border: "none", borderRadius: "50%", cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            transition: "all 0.25s ease", color: wishlisted ? "#c0392b" : "var(--on-surface-variant)",
+            boxShadow: "0 1px 6px rgba(0,0,0,0.08)",
+          }}>
+            <Icon name={wishlisted ? "favorite" : "favorite_border"} size={18} filled={wishlisted} />
+          </button>
+        )}
         {onAddToCart && (
           <button
             onClick={handleQuickAdd}
@@ -2201,20 +2566,55 @@ function SearchOverlay({ isOpen, onClose, navigate }: {
 }
 
 // --- Profile Page ---
-const MOCK_ORDERS = [
-  { id: "MEM-2026-001", date: "March 15, 2026", status: "Delivered", items: [FALLBACK_PRODUCTS[0]], total: 2499 },
-  { id: "MEM-2026-002", date: "February 28, 2026", status: "In Transit", items: [FALLBACK_PRODUCTS[1], FALLBACK_PRODUCTS[3]], total: 4498 },
-  { id: "MEM-2026-003", date: "January 10, 2026", status: "Delivered", items: [FALLBACK_PRODUCTS[5]], total: 3499 },
-];
-
-const MOCK_ADDRESSES = [
-  { label: "Home", line1: "42 Bandra West", line2: "Mumbai, MH 400050", isDefault: true },
-  { label: "Office", line1: "WeWork BKC, G Block", line2: "Mumbai, MH 400051", isDefault: false },
-];
 
 function ProfilePage({ navigate }: { navigate: (page: string, param?: string | null) => void }) {
-  const [activeTab, setActiveTab] = useState("orders");
+  const auth = useAuth();
+  const { products } = useStore();
+  const [activeTab, setActiveTab] = useState("wishlist");
+  const [showAddAddress, setShowAddAddress] = useState(false);
+  const [editingAddr, setEditingAddr] = useState<string | null>(null);
+  const [addrForm, setAddrForm] = useState({ label: "", name: "", phone: "", line1: "", line2: "", city: "", state: "", pincode: "" });
+  const [editName, setEditName] = useState(false);
+  const [editPhone, setEditPhone] = useState(false);
+  const [nameVal, setNameVal] = useState(auth.user?.name || "");
+  const [phoneVal, setPhoneVal] = useState(auth.user?.phone || "");
+
+  const wishlistProducts = products.filter(p => auth.wishlist.includes(p.id));
+  const memberSince = auth.user?.createdAt
+    ? new Date(auth.user.createdAt).toLocaleDateString("en-IN", { month: "long", year: "numeric" })
+    : "";
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%", padding: "14px 16px", border: "1px solid var(--outline-variant)",
+    background: "white", fontSize: 14, fontFamily: "'DM Sans', sans-serif", borderRadius: 0,
+  };
+
+  const resetAddrForm = () => {
+    setAddrForm({ label: "", name: "", phone: "", line1: "", line2: "", city: "", state: "", pincode: "" });
+    setShowAddAddress(false);
+    setEditingAddr(null);
+  };
+
+  const handleSaveAddr = () => {
+    if (!addrForm.label || !addrForm.name || !addrForm.line1 || !addrForm.city || !addrForm.pincode) return;
+    if (editingAddr) {
+      auth.updateAddress(editingAddr, addrForm);
+    } else {
+      auth.addAddress({ ...addrForm, isDefault: auth.addresses.length === 0 });
+    }
+    resetAddrForm();
+  };
+
+  const startEditAddr = (addr: SavedAddress) => {
+    setAddrForm({ label: addr.label, name: addr.name, phone: addr.phone, line1: addr.line1, line2: addr.line2, city: addr.city, state: addr.state, pincode: addr.pincode });
+    setEditingAddr(addr.id);
+    setShowAddAddress(true);
+  };
+
   const tabs = [
+    { id: "wishlist", label: "Wishlist", icon: "favorite" },
+    { id: "addresses", label: "Addresses", icon: "location_on" },
+    { id: "settings", label: "Settings", icon: "settings" },
     { id: "orders", label: "Orders", icon: "receipt_long" },
     { id: "wishlist", label: "Wishlist", icon: "favorite" },
     { id: "addresses", label: "Addresses", icon: "location_on" },
@@ -2233,9 +2633,9 @@ function ProfilePage({ navigate }: { navigate: (page: string, param?: string | n
             <Icon name="person" size={36} color="white" />
           </div>
           <div>
-            <h1 className="font-serif" style={{ fontSize: 28, fontWeight: 400, marginBottom: 4 }}>Priya Sharma</h1>
-            <p style={{ fontSize: 13, color: "var(--on-surface-variant)" }}>priya.sharma@email.com</p>
-            <p style={{ fontSize: 11, color: "var(--gold)", marginTop: 4, letterSpacing: "0.1em", textTransform: "uppercase" }}>Member since January 2026</p>
+            <h1 className="font-serif" style={{ fontSize: 28, fontWeight: 400, marginBottom: 4 }}>{auth.user?.name || "Guest"}</h1>
+            <p style={{ fontSize: 13, color: "var(--on-surface-variant)" }}>{auth.user?.email}</p>
+            {memberSince && <p style={{ fontSize: 11, color: "var(--gold)", marginTop: 4, letterSpacing: "0.1em", textTransform: "uppercase" }}>Member since {memberSince}</p>}
           </div>
         </div>
       </div>
@@ -2313,26 +2713,43 @@ function ProfilePage({ navigate }: { navigate: (page: string, param?: string | n
         {activeTab === "wishlist" && (
           <div>
             <h2 className="font-serif" style={{ fontSize: 22, fontWeight: 400, marginBottom: 24 }}>Your Wishlist</h2>
-            <div className="wishlist-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 24 }}>
-              {[FALLBACK_PRODUCTS[0], FALLBACK_PRODUCTS[2], FALLBACK_PRODUCTS[4]].map((product) => (
-                <div key={product.id} style={{
-                  border: "1px solid var(--outline-variant)", borderRadius: 0, overflow: "hidden", background: "white",
-                  cursor: "pointer", transition: "transform 0.2s",
-                }} className="hover-lift" onClick={() => navigate("product", product.id)}>
-                  <img src={product.images[0]} alt={product.name} style={{ width: "100%", height: 200, objectFit: "cover" }} />
-                  <div style={{ padding: 16 }}>
-                    <p className="font-serif" style={{ fontSize: 18, fontStyle: "italic", marginBottom: 4 }}>{product.name}</p>
-                    <p style={{ fontSize: 12, color: "var(--on-surface-variant)", marginBottom: 8 }}>{product.type} · {product.momentLabel}</p>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontSize: 16, fontWeight: 500 }}>{formatPrice(product.price)}</span>
-                      <button style={{ background: "none", border: "none", cursor: "pointer", color: "var(--gold)" }}>
-                        <Icon name="favorite" size={20} />
+            {wishlistProducts.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "48px 0" }}>
+                <Icon name="favorite_border" size={48} color="var(--outline-variant)" />
+                <p className="font-serif" style={{ fontSize: 18, marginTop: 16, marginBottom: 8 }}>Your wishlist is empty</p>
+                <p style={{ fontSize: 13, color: "var(--on-surface-variant)", marginBottom: 24 }}>Browse our collections and tap the heart to save pieces you love.</p>
+                <button onClick={() => navigate("moments")} style={{
+                  padding: "14px 36px", background: "var(--primary)", color: "white", border: "none",
+                  fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", fontWeight: 600, cursor: "pointer",
+                }}>Shop by Moment</button>
+              </div>
+            ) : (
+              <div className="wishlist-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 24 }}>
+                {wishlistProducts.map((product) => (
+                  <div key={product.id} style={{
+                    border: "1px solid var(--outline-variant)", borderRadius: 0, overflow: "hidden", background: "white",
+                    cursor: "pointer", transition: "transform 0.2s",
+                  }} className="hover-lift" onClick={() => navigate("product", product.id)}>
+                    <div style={{ position: "relative" }}>
+                      <img src={product.images[0]} alt={product.name} style={{ width: "100%", height: 200, objectFit: "cover" }} />
+                      <button onClick={(e) => { e.stopPropagation(); auth.toggleWishlist(product.id); }} style={{
+                        position: "absolute", top: 10, right: 10, width: 32, height: 32,
+                        background: "rgba(255,255,255,0.85)", border: "none", borderRadius: "50%",
+                        cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                        color: "#c0392b",
+                      }}>
+                        <Icon name="favorite" size={16} filled />
                       </button>
                     </div>
+                    <div style={{ padding: 16 }}>
+                      <p className="font-serif" style={{ fontSize: 18, fontStyle: "italic", marginBottom: 4 }}>{product.name}</p>
+                      <p style={{ fontSize: 12, color: "var(--on-surface-variant)", marginBottom: 8 }}>{product.type} · {product.momentLabel}</p>
+                      <span style={{ fontSize: 16, fontWeight: 500 }}>{formatPrice(product.price)}</span>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -2341,7 +2758,7 @@ function ProfilePage({ navigate }: { navigate: (page: string, param?: string | n
           <div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
               <h2 className="font-serif" style={{ fontSize: 22, fontWeight: 400 }}>Saved Addresses</h2>
-              <button style={{
+              <button onClick={() => { resetAddrForm(); setShowAddAddress(true); }} style={{
                 padding: "10px 20px", background: "none", border: "1px solid var(--primary)", color: "var(--primary)",
                 fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", fontWeight: 600, cursor: "pointer", borderRadius: 0,
                 display: "flex", alignItems: "center", gap: 6,
@@ -2349,32 +2766,99 @@ function ProfilePage({ navigate }: { navigate: (page: string, param?: string | n
                 <Icon name="add" size={16} /> Add Address
               </button>
             </div>
-            <div className="address-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
-              {MOCK_ADDRESSES.map((addr) => (
-                <div key={addr.label} style={{
-                  border: addr.isDefault ? "2px solid var(--gold)" : "1px solid var(--outline-variant)",
-                  borderRadius: 0, padding: 24, background: "white", position: "relative",
-                }}>
-                  {addr.isDefault && (
-                    <span style={{
-                      position: "absolute", top: 12, right: 12, padding: "3px 10px", background: "var(--gold)", color: "white",
-                      fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", borderRadius: 0,
-                    }}>Default</span>
-                  )}
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-                    <Icon name="location_on" size={18} color="var(--primary)" />
-                    <p style={{ fontSize: 14, fontWeight: 600 }}>{addr.label}</p>
+
+            {/* Add/Edit address form */}
+            {showAddAddress && (
+              <div style={{ background: "white", border: "1px solid var(--outline-variant)", padding: 24, marginBottom: 24 }}>
+                <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>{editingAddr ? "Edit Address" : "New Address"}</h3>
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }} className="address-grid">
+                    <div>
+                      <label style={{ fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--on-surface-variant)", display: "block", marginBottom: 4 }}>Label *</label>
+                      <input value={addrForm.label} onChange={e => setAddrForm({ ...addrForm, label: e.target.value })} placeholder="Home, Office..." style={inputStyle} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--on-surface-variant)", display: "block", marginBottom: 4 }}>Recipient Name *</label>
+                      <input value={addrForm.name} onChange={e => setAddrForm({ ...addrForm, name: e.target.value })} placeholder="Full name" style={inputStyle} />
+                    </div>
                   </div>
-                  <p style={{ fontSize: 14, color: "var(--on-surface-variant)", lineHeight: 1.6 }}>
-                    {addr.line1}<br />{addr.line2}
-                  </p>
-                  <div style={{ display: "flex", gap: 16, marginTop: 16 }}>
-                    <button style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "var(--primary)", fontWeight: 500 }}>Edit</button>
-                    <button style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "var(--on-surface-variant)" }}>Delete</button>
+                  <div>
+                    <label style={{ fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--on-surface-variant)", display: "block", marginBottom: 4 }}>Phone</label>
+                    <input value={addrForm.phone} onChange={e => setAddrForm({ ...addrForm, phone: e.target.value })} placeholder="+91 98765 43210" style={inputStyle} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--on-surface-variant)", display: "block", marginBottom: 4 }}>Address Line 1 *</label>
+                    <input value={addrForm.line1} onChange={e => setAddrForm({ ...addrForm, line1: e.target.value })} placeholder="House/Flat, Street" style={inputStyle} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--on-surface-variant)", display: "block", marginBottom: 4 }}>Address Line 2</label>
+                    <input value={addrForm.line2} onChange={e => setAddrForm({ ...addrForm, line2: e.target.value })} placeholder="Landmark (optional)" style={inputStyle} />
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }} className="address-grid">
+                    <div>
+                      <label style={{ fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--on-surface-variant)", display: "block", marginBottom: 4 }}>City *</label>
+                      <input value={addrForm.city} onChange={e => setAddrForm({ ...addrForm, city: e.target.value })} placeholder="Mumbai" style={inputStyle} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--on-surface-variant)", display: "block", marginBottom: 4 }}>State</label>
+                      <input value={addrForm.state} onChange={e => setAddrForm({ ...addrForm, state: e.target.value })} placeholder="Maharashtra" style={inputStyle} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--on-surface-variant)", display: "block", marginBottom: 4 }}>Pincode *</label>
+                      <input value={addrForm.pincode} onChange={e => setAddrForm({ ...addrForm, pincode: e.target.value })} placeholder="400001" style={inputStyle} />
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
+                    <button onClick={handleSaveAddr} style={{
+                      padding: "12px 28px", background: "var(--primary)", color: "white", border: "none",
+                      fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", fontWeight: 600, cursor: "pointer",
+                    }}>{editingAddr ? "Update" : "Save Address"}</button>
+                    <button onClick={resetAddrForm} style={{
+                      padding: "12px 28px", background: "none", border: "1px solid var(--outline-variant)", color: "var(--on-surface-variant)",
+                      fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", cursor: "pointer",
+                    }}>Cancel</button>
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
+
+            {auth.addresses.length === 0 && !showAddAddress ? (
+              <div style={{ textAlign: "center", padding: "48px 0" }}>
+                <Icon name="location_on" size={48} color="var(--outline-variant)" />
+                <p className="font-serif" style={{ fontSize: 18, marginTop: 16, marginBottom: 8 }}>No saved addresses</p>
+                <p style={{ fontSize: 13, color: "var(--on-surface-variant)" }}>Add an address for faster checkout.</p>
+              </div>
+            ) : (
+              <div className="address-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
+                {auth.addresses.map((addr) => (
+                  <div key={addr.id} style={{
+                    border: addr.isDefault ? "2px solid var(--gold)" : "1px solid var(--outline-variant)",
+                    borderRadius: 0, padding: 24, background: "white", position: "relative",
+                  }}>
+                    {addr.isDefault && (
+                      <span style={{
+                        position: "absolute", top: 12, right: 12, padding: "3px 10px", background: "var(--gold)", color: "white",
+                        fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
+                      }}>Default</span>
+                    )}
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                      <Icon name="location_on" size={18} color="var(--primary)" />
+                      <p style={{ fontSize: 14, fontWeight: 600 }}>{addr.label}</p>
+                    </div>
+                    <p style={{ fontSize: 14, fontWeight: 500, marginBottom: 2 }}>{addr.name}</p>
+                    {addr.phone && <p style={{ fontSize: 12, color: "var(--on-surface-variant)", marginBottom: 4 }}>{addr.phone}</p>}
+                    <p style={{ fontSize: 14, color: "var(--on-surface-variant)", lineHeight: 1.6 }}>
+                      {addr.line1}{addr.line2 ? `, ${addr.line2}` : ""}<br />{addr.city}{addr.state ? `, ${addr.state}` : ""} — {addr.pincode}
+                    </p>
+                    <div style={{ display: "flex", gap: 16, marginTop: 16 }}>
+                      <button onClick={() => startEditAddr(addr)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "var(--primary)", fontWeight: 500 }}>Edit</button>
+                      {!addr.isDefault && <button onClick={() => auth.setDefaultAddress(addr.id)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "var(--gold)", fontWeight: 500 }}>Set Default</button>}
+                      <button onClick={() => auth.deleteAddress(addr.id)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "var(--on-surface-variant)" }}>Delete</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -2383,44 +2867,48 @@ function ProfilePage({ navigate }: { navigate: (page: string, param?: string | n
           <div>
             <h2 className="font-serif" style={{ fontSize: 22, fontWeight: 400, marginBottom: 24 }}>Account Settings</h2>
             <div style={{ background: "white", border: "1px solid var(--outline-variant)", borderRadius: 0, overflow: "hidden" }}>
-              {[
-                { label: "Full Name", value: "Priya Sharma" },
-                { label: "Email", value: "priya.sharma@email.com" },
-                { label: "Phone", value: "+91 98765 43210" },
-              ].map((field, i) => (
-                <div key={field.label} style={{
-                  padding: "20px 24px", display: "flex", justifyContent: "space-between", alignItems: "center",
-                  borderBottom: i < 2 ? "1px solid var(--outline-variant)" : "none",
-                }}>
-                  <div>
-                    <p style={{ fontSize: 11, color: "var(--on-surface-variant)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 4 }}>{field.label}</p>
-                    <p style={{ fontSize: 15 }}>{field.value}</p>
-                  </div>
-                  <button style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "var(--primary)", fontWeight: 500 }}>Edit</button>
+              {/* Name */}
+              <div style={{ padding: "20px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--outline-variant)" }}>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: 11, color: "var(--on-surface-variant)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 4 }}>Full Name</p>
+                  {editName ? (
+                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <input value={nameVal} onChange={e => setNameVal(e.target.value)} style={{ padding: "8px 12px", border: "1px solid var(--outline-variant)", fontSize: 14, flex: 1 }} />
+                      <button onClick={() => { auth.updateProfile({ name: nameVal }); setEditName(false); }} style={{ background: "var(--primary)", color: "white", border: "none", padding: "8px 16px", fontSize: 11, cursor: "pointer", fontWeight: 600 }}>Save</button>
+                      <button onClick={() => setEditName(false)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "var(--on-surface-variant)" }}>Cancel</button>
+                    </div>
+                  ) : (
+                    <p style={{ fontSize: 15 }}>{auth.user?.name}</p>
+                  )}
                 </div>
-              ))}
+                {!editName && <button onClick={() => { setNameVal(auth.user?.name || ""); setEditName(true); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "var(--primary)", fontWeight: 500 }}>Edit</button>}
+              </div>
+              {/* Email (read-only) */}
+              <div style={{ padding: "20px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--outline-variant)" }}>
+                <div>
+                  <p style={{ fontSize: 11, color: "var(--on-surface-variant)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 4 }}>Email</p>
+                  <p style={{ fontSize: 15 }}>{auth.user?.email}</p>
+                </div>
+              </div>
+              {/* Phone */}
+              <div style={{ padding: "20px 24px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: 11, color: "var(--on-surface-variant)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 4 }}>Phone</p>
+                  {editPhone ? (
+                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <input value={phoneVal} onChange={e => setPhoneVal(e.target.value)} style={{ padding: "8px 12px", border: "1px solid var(--outline-variant)", fontSize: 14, flex: 1 }} />
+                      <button onClick={() => { auth.updateProfile({ phone: phoneVal }); setEditPhone(false); }} style={{ background: "var(--primary)", color: "white", border: "none", padding: "8px 16px", fontSize: 11, cursor: "pointer", fontWeight: 600 }}>Save</button>
+                      <button onClick={() => setEditPhone(false)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "var(--on-surface-variant)" }}>Cancel</button>
+                    </div>
+                  ) : (
+                    <p style={{ fontSize: 15 }}>{auth.user?.phone || "Not added"}</p>
+                  )}
+                </div>
+                {!editPhone && <button onClick={() => { setPhoneVal(auth.user?.phone || ""); setEditPhone(true); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "var(--primary)", fontWeight: 500 }}>Edit</button>}
+              </div>
             </div>
 
-            <div style={{
-              background: "white", border: "1px solid var(--outline-variant)", borderRadius: 0, padding: "20px 24px", marginTop: 16,
-              display: "flex", justifyContent: "space-between", alignItems: "center",
-            }}>
-              <div>
-                <p style={{ fontSize: 14, fontWeight: 500, marginBottom: 2 }}>Email Notifications</p>
-                <p style={{ fontSize: 12, color: "var(--on-surface-variant)" }}>Receive updates on new collections and offers</p>
-              </div>
-              <div style={{
-                width: 44, height: 24, borderRadius: 12, background: "var(--gold)", cursor: "pointer", position: "relative",
-                transition: "background 0.2s",
-              }}>
-                <div style={{
-                  width: 20, height: 20, borderRadius: "50%", background: "white", position: "absolute", top: 2, right: 2,
-                  transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
-                }} />
-              </div>
-            </div>
-
-            <button style={{
+            <button onClick={() => { auth.logout(); navigate("home"); }} style={{
               marginTop: 32, padding: "14px 32px", background: "none", border: "1px solid var(--primary)",
               color: "var(--primary)", fontSize: 12, letterSpacing: "0.15em", textTransform: "uppercase", fontWeight: 600,
               cursor: "pointer", borderRadius: 0, width: "100%",
@@ -2444,7 +2932,16 @@ function CheckoutPage({ navigate, cart, onRemoveFromCart, onClearCart, checkoutU
   isShopifyConnected?: boolean;
 }) {
   const [step, setStep] = useState(1); // 1=Address, 2=Payment, 3=Confirmation
-  const [address, setAddress] = useState({ name: "", phone: "", email: "", line1: "", line2: "", city: "", state: "", pincode: "", buyerName: "", buyerPhone: "", buyerEmail: "" });
+  const auth = useAuth();
+  const defaultAddr = auth.getDefaultAddress();
+  const [address, setAddress] = useState(() => ({
+    name: defaultAddr?.name || "", phone: defaultAddr?.phone || "", email: "",
+    line1: defaultAddr?.line1 || "", line2: defaultAddr?.line2 || "",
+    city: defaultAddr?.city || "", state: defaultAddr?.state || "",
+    pincode: defaultAddr?.pincode || "",
+    buyerName: auth.user?.name || "", buyerPhone: auth.user?.phone || "",
+    buyerEmail: auth.user?.email || "",
+  }));
   const [paymentMethod, setPaymentMethod] = useState("upi");
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [processingPayment, setProcessingPayment] = useState(false);
@@ -3060,11 +3557,22 @@ export default function App() {
   const [cartOpen, setCartOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [giftGuideOpen, setGiftGuideOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+
+  // Auth
+  const authValue = useAuthProvider();
 
   // Shopify integration — fetches products & collections from Shopify
   const { products, isShopifyConnected } = useProducts(FALLBACK_PRODUCTS);
   const { collections } = useCollections();
   const shopifyCart = useShopifyCart(isShopifyConnected);
+
+  // Persist cart to user account when it changes
+  useEffect(() => {
+    if (authValue.isLoggedIn && shopifyCart.cart.length > 0) {
+      authValue.saveCart(shopifyCart.cart);
+    }
+  }, [shopifyCart.cart, authValue.isLoggedIn]);
 
   // Listen for browser back/forward
   useEffect(() => {
@@ -3081,6 +3589,11 @@ export default function App() {
 
   const navigate = useCallback((page: string, param: string | null = null) => {
     if (page === "gift-guide") { setGiftGuideOpen(true); return; }
+    // Auth gate: profile requires login
+    if (page === "profile" && !authValue.isLoggedIn) {
+      setAuthModalOpen(true);
+      return;
+    }
     const hash = pageToHash(page, param);
     window.location.hash = hash;
     setCurrentPage(page);
@@ -3088,7 +3601,7 @@ export default function App() {
     setSearchOpen(false);
     setGiftGuideOpen(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, []);
+  }, [authValue.isLoggedIn]);
 
   const handleAddToCart = useCallback((product: MemoirProduct, isGift = false, giftMessage = "") => {
     shopifyCart.addItem(product, isGift, giftMessage);
@@ -3143,6 +3656,7 @@ export default function App() {
   useScrollReveal();
 
   return (
+    <AuthContext.Provider value={authValue}>
     <StoreContext.Provider value={storeValue}>
       <style>{GLOBAL_STYLES}</style>
       <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
@@ -3154,6 +3668,8 @@ export default function App() {
       <GiftGuideModal isOpen={giftGuideOpen} onClose={() => setGiftGuideOpen(false)} navigate={navigate} />
       {currentPage !== "checkout" && <MobileCartBar cart={shopifyCart.cart} onViewCart={() => setCartOpen(true)} />}
       <BackToTop />
+      <AuthModal isOpen={authModalOpen} onClose={() => { setAuthModalOpen(false); if (authValue.isLoggedIn) navigate("profile"); }} />
     </StoreContext.Provider>
+    </AuthContext.Provider>
   );
 }
