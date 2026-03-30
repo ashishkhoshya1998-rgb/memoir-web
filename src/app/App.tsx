@@ -976,7 +976,8 @@ const GLOBAL_STYLES = `
     .hero-text { max-width: 100% !important; }
     .hero-buttons { flex-direction: row !important; }
     .hero-buttons button { padding: 14px 28px !important; flex: 1; }
-    .hero-bg img { object-position: 60% 40% !important; }
+    .hero-bg img { object-position: 65% 50% !important; }
+    .hero-overlay { background: linear-gradient(to top, rgba(250,247,242,0.95) 0%, rgba(250,247,242,0.5) 35%, rgba(250,247,242,0.1) 55%, transparent 100%) !important; }
 
     /* Trust strip */
     .trust-strip { padding: 12px 16px !important; gap: 12px !important; }
@@ -1308,8 +1309,8 @@ function HomePage({ navigate }: { navigate: (page: string, param?: string | null
       {/* Hero */}
       <section style={{ position: "relative", height: "100vh", minHeight: 600, overflow: "hidden" }}>
         <div className="hero-bg" style={{ position: "absolute", inset: 0 }}>
-          <img src="/hero-main.jpg" alt="Memoir — jewellery as a memory you can touch" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 40%", filter: "brightness(0.92) saturate(0.85)" }} />
-          <div className="hero-overlay" style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(250,247,242,0.95) 0%, rgba(250,247,242,0.4) 35%, rgba(250,247,242,0.05) 60%, transparent 100%)" }} />
+          <img src="https://cdn.shopify.com/s/files/1/0779/8459/6004/files/Gemini_Generated_Image_t8ku8ot8ku8ot8ku.png?v=1774874845" alt="Memoir — jewellery as a memory you can touch" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "70% 50%", filter: "brightness(0.97) saturate(0.92)" }} />
+          <div className="hero-overlay" style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(250,247,242,0.6) 0%, rgba(250,247,242,0.15) 40%, transparent 60%), linear-gradient(to top, rgba(250,247,242,0.92) 0%, rgba(250,247,242,0.3) 30%, transparent 55%)" }} />
         </div>
         <div className="hero-content content-padding" style={{ position: "relative", zIndex: 2, maxWidth: 1280, margin: "0 auto", padding: "0 32px", height: "100%", display: "flex", alignItems: "flex-end", paddingBottom: 80 }}>
           <div className="hero-text" style={{ maxWidth: 600 }}>
