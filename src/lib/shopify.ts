@@ -603,6 +603,31 @@ export async function fetchProductByHandle(handle: string): Promise<MemoirProduc
   return data.product ? mapShopifyProduct(data.product) : null;
 }
 
+export interface HeroSlide {
+  url: string;
+  mobilePosition: string; // e.g. "60% 40%" — parsed from altText like "mobile:60% 40%"
+  desktopPosition: string;
+}
+
+export async function fetchHeroSlides(): Promise<HeroSlide[]> {
+  const data = await shopifyFetch<{ product: ShopifyProduct | null }>(
+    PRODUCT_BY_HANDLE_QUERY,
+    { handle: "hero-images" }
+  );
+  if (!data.product) return [];
+  return data.product.images.edges.map((e) => {
+    const alt = e.node.altText || "";
+    // Parse alt text for position hints: "mobile:60% 40% desktop:70% 50%"
+    const mobileMatch = alt.match(/mobile:\s*([\d]+%\s*[\d]+%)/i);
+    const desktopMatch = alt.match(/desktop:\s*([\d]+%\s*[\d]+%)/i);
+    return {
+      url: e.node.url,
+      mobilePosition: mobileMatch ? mobileMatch[1] : "50% 30%",
+      desktopPosition: desktopMatch ? desktopMatch[1] : "50% 50%",
+    };
+  });
+}
+
 export async function fetchCollections() {
   const data = await shopifyFetch<{ collections: { edges: { node: any }[] } }>(
     COLLECTIONS_QUERY,

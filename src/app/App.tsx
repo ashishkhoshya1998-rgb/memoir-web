@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, createContext, useContext } from "react";
 import { useProducts, useShopifyCart, useCollections, type CartItem, type MemoirCollection } from "../lib/useShopify";
-import { fetchProductByHandle, type MemoirProduct } from "../lib/shopify";
+import { fetchProductByHandle, fetchHeroSlides, type MemoirProduct } from "../lib/shopify";
 import { auth as firebaseAuth, googleProvider, RecaptchaVerifier, signInWithPhoneNumber, signInWithPopup } from "../lib/firebase";
 import type { ConfirmationResult } from "firebase/auth";
 
@@ -966,7 +966,7 @@ const GLOBAL_STYLES = `
     .hero-text { max-width: 100% !important; }
     .hero-buttons { flex-direction: row !important; }
     .hero-buttons button { padding: 14px 28px !important; flex: 1; }
-    .hero-bg img { object-position: 80% 50% !important; }
+    /* hero-bg img positions now set per-image via JS */
     .hero-overlay { background: linear-gradient(to top, rgba(250,247,242,0.95) 0%, rgba(250,247,242,0.5) 35%, rgba(250,247,242,0.1) 55%, transparent 100%) !important; }
 
     /* Trust strip */
@@ -1295,38 +1295,43 @@ function ProductCard({ product, navigate, onAddToCart, style: cardStyle = {} }: 
 function HomePage({ navigate }: { navigate: (page: string, param?: string | null) => void; onAddToCart: Function }) {
   const { products, collections } = useStore();
 
-  // Hero carousel — fetches images from "hero-banner" product in Shopify
-  const FALLBACK_HERO = ["https://cdn.shopify.com/s/files/1/0779/8459/6004/files/Gemini_Generated_Image_t8ku8ot8ku8ot8ku.png?v=1774874845"];
-  const [heroImages, setHeroImages] = useState<string[]>(FALLBACK_HERO);
+  // Hero carousel — fetches images + per-image positions from "hero-images" product
+  const FALLBACK_SLIDES = [{ url: "https://cdn.shopify.com/s/files/1/0779/8459/6004/files/Gemini_Generated_Image_t8ku8ot8ku8ot8ku.png?v=1774874845", mobilePosition: "80% 50%", desktopPosition: "70% 50%" }];
+  const [heroSlides, setHeroSlides] = useState(FALLBACK_SLIDES);
   const [heroIdx, setHeroIdx] = useState(0);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   useEffect(() => {
-    fetchProductByHandle("hero-images").then((p) => {
-      if (p && p.images.length > 0) setHeroImages(p.images);
+    fetchHeroSlides().then((slides) => {
+      if (slides.length > 0) setHeroSlides(slides);
     }).catch(() => {});
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   useEffect(() => {
-    if (heroImages.length <= 1) return;
+    if (heroSlides.length <= 1) return;
     const timer = setInterval(() => {
-      setHeroIdx((prev) => (prev + 1) % heroImages.length);
+      setHeroIdx((prev) => (prev + 1) % heroSlides.length);
     }, 3000);
     return () => clearInterval(timer);
-  }, [heroImages.length]);
+  }, [heroSlides.length]);
 
   return (
     <div>
       {/* Hero Carousel */}
       <section style={{ position: "relative", height: "100vh", minHeight: 600, overflow: "hidden" }}>
         <div className="hero-bg" style={{ position: "absolute", inset: 0 }}>
-          {heroImages.map((src, i) => (
+          {heroSlides.map((slide, i) => (
             <img
-              key={src}
-              src={src}
+              key={slide.url}
+              src={slide.url}
               alt={`Memoir hero ${i + 1}`}
               style={{
                 position: "absolute", inset: 0, width: "100%", height: "100%",
-                objectFit: "cover", objectPosition: "70% 50%",
+                objectFit: "cover",
+                objectPosition: isMobile ? slide.mobilePosition : slide.desktopPosition,
                 filter: "brightness(0.97) saturate(0.92)",
                 opacity: i === heroIdx ? 1 : 0,
                 transition: "opacity 0.8s ease-in-out",
@@ -1372,9 +1377,9 @@ function HomePage({ navigate }: { navigate: (page: string, param?: string | null
         </div>
 
         {/* Carousel dots */}
-        {heroImages.length > 1 && (
+        {heroSlides.length > 1 && (
           <div style={{ position: "absolute", bottom: 24, left: "50%", transform: "translateX(-50%)", zIndex: 3, display: "flex", gap: 8 }}>
-            {heroImages.map((_, i) => (
+            {heroSlides.map((_, i) => (
               <button
                 key={i}
                 onClick={() => setHeroIdx(i)}
