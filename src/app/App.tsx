@@ -1220,7 +1220,7 @@ function ProductCard({ product, navigate, onAddToCart, style: cardStyle = {} }: 
   const touchDeltaX = useRef(0);
   const isSwiping = useRef(false);
   const auth = useAuth();
-  const images = product.images.length > 0 ? product.images : ["/placeholder.jpg"];
+  const images = product.images.length > 0 ? product.images.slice(0, 5) : ["/placeholder.jpg"];
 
   const handleQuickAdd = (e: React.MouseEvent) => {
     e.stopPropagation();
