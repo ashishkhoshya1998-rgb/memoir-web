@@ -861,6 +861,25 @@ const GLOBAL_STYLES = `
   .stagger-4 { animation-delay: 0.4s; opacity: 0; }
   .stagger-5 { animation-delay: 0.6s; opacity: 0; }
   @keyframes se-nudge { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(-6px); } }
+  @keyframes hero-peek-slide {
+    0%, 100% { transform: translateX(6px); }
+    50% { transform: translateX(-2px); }
+  }
+  @keyframes hero-peek-glow {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
+  @keyframes hero-arrow-slide {
+    0%, 100% { transform: translateX(0); opacity: 0.4; }
+    50% { transform: translateX(-6px); opacity: 1; }
+  }
+  .hero-peek-strip { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+  .hero-peek-strip:hover { transform: translateX(-8px) !important; box-shadow: -8px 0 30px rgba(0,0,0,0.15) !important; }
+  .hero-peek-strip:hover .hero-peek-label { opacity: 1 !important; }
+  @media (max-width: 480px) {
+    .hero-peek-strip { padding: 16px 10px !important; }
+    .hero-peek-strip span[style*="vertical"] { font-size: 7px !important; }
+  }
   .hover-lift { transition: transform 0.4s ease, box-shadow 0.4s ease; }
   .hover-lift:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(26,28,26,0.08); }
   .desktop-gallery:hover .gallery-arrow { opacity: 1 !important; }
@@ -953,11 +972,11 @@ const GLOBAL_STYLES = `
     .header-icons { gap: 14px !important; }
 
     /* Hero */
-    .hero-content { padding: 0 20px !important; align-items: flex-end !important; padding-bottom: 80px !important; }
+    .hero-content { padding: 0 20px !important; padding-bottom: 60px !important; }
     .hero-text { max-width: 100% !important; }
-    .hero-buttons button { padding: 14px 24px !important; width: 100%; }
-    .hero-bg img { object-position: 60% 50% !important; }
-    .hero-overlay { background: linear-gradient(to top, rgba(250,247,242,0.92) 0%, rgba(250,247,242,0.6) 40%, rgba(250,247,242,0.15) 70%, transparent 100%) !important; }
+    .hero-buttons { flex-direction: row !important; }
+    .hero-buttons button { padding: 14px 28px !important; flex: 1; }
+    .hero-bg img { object-position: 60% 40% !important; }
 
     /* Trust strip */
     .trust-strip { padding: 12px 16px !important; gap: 12px !important; }
@@ -1054,8 +1073,8 @@ const GLOBAL_STYLES = `
     .header-inner { padding: 12px 12px !important; }
     .header-icons { gap: 10px !important; }
     .content-padding { padding-left: 16px !important; padding-right: 16px !important; }
-    .hero-buttons { flex-direction: column !important; }
-    .hero-buttons button { width: 100% !important; }
+    .hero-buttons { flex-direction: column !important; width: 100%; }
+    .hero-buttons button { width: 100% !important; text-align: center !important; justify-content: center !important; }
   }
 `;
 
@@ -1289,59 +1308,80 @@ function HomePage({ navigate }: { navigate: (page: string, param?: string | null
       {/* Hero */}
       <section style={{ position: "relative", height: "100vh", minHeight: 600, overflow: "hidden" }}>
         <div className="hero-bg" style={{ position: "absolute", inset: 0 }}>
-          <img src="/hero-main.jpg" alt="Memoir — jewellery as a memory you can touch" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 55%", filter: "brightness(0.95) saturate(0.9)" }} />
-          <div className="hero-overlay" style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, rgba(250,247,242,0.88) 0%, rgba(250,247,242,0.5) 45%, transparent 100%)" }} />
+          <img src="/hero-main.jpg" alt="Memoir — jewellery as a memory you can touch" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 40%", filter: "brightness(0.92) saturate(0.85)" }} />
+          <div className="hero-overlay" style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(250,247,242,0.95) 0%, rgba(250,247,242,0.4) 35%, rgba(250,247,242,0.05) 60%, transparent 100%)" }} />
         </div>
-        <div className="hero-content content-padding" style={{ position: "relative", zIndex: 2, maxWidth: 1280, margin: "0 auto", padding: "0 32px", height: "100%", display: "flex", alignItems: "center" }}>
-          <div className="hero-text" style={{ maxWidth: 560 }}>
-            <p className="font-handwritten animate-fade-up stagger-1" style={{ fontSize: 16, color: "var(--charcoal)", marginBottom: 16, background: "rgba(250,247,242,0.75)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", display: "inline-block", padding: "8px 18px", borderLeft: "2px solid var(--gold)", letterSpacing: "0.02em" }}>
-              Jewellery, as a memory you can touch
-            </p>
-            <h1 className="font-serif animate-fade-up stagger-2" style={{ fontSize: "clamp(36px, 5vw, 56px)", lineHeight: 1.1, fontWeight: 400, color: "var(--charcoal)", marginBottom: 20 }}>
-              Designed around the<br />moments that matter
+        <div className="hero-content content-padding" style={{ position: "relative", zIndex: 2, maxWidth: 1280, margin: "0 auto", padding: "0 32px", height: "100%", display: "flex", alignItems: "flex-end", paddingBottom: 80 }}>
+          <div className="hero-text" style={{ maxWidth: 600 }}>
+            <h1 className="font-serif animate-fade-up stagger-1" style={{ fontSize: "clamp(38px, 5.5vw, 64px)", lineHeight: 1.05, fontWeight: 400, color: "var(--charcoal)", marginBottom: 16, letterSpacing: "-0.01em" }}>
+              Jewellery, designed<br />around moments
             </h1>
-            <p className="animate-fade-up stagger-3" style={{ fontSize: 15, lineHeight: 1.7, color: "var(--on-surface-variant)", marginBottom: 36, maxWidth: 420 }}>
-              Handcrafted 925 sterling silver. For birthdays, new beginnings, and every moment worth remembering.
+            <p className="animate-fade-up stagger-2" style={{ fontSize: 15, lineHeight: 1.6, color: "var(--on-surface-variant)", marginBottom: 32, maxWidth: 380 }}>
+              925 sterling silver, handcrafted for the moments worth remembering.
             </p>
-            <div className="animate-fade-up stagger-4 hero-buttons" style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+            <div className="animate-fade-up stagger-3 hero-buttons" style={{ display: "flex", gap: 12, alignItems: "center" }}>
               <button
                 onClick={() => navigate("moments")}
                 style={{
-                  padding: "16px 36px", background: "var(--primary)", color: "white", border: "none",
-                  fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", fontWeight: 600, cursor: "pointer", transition: "all 0.3s ease",
+                  padding: "15px 40px", background: "var(--charcoal)", color: "white", border: "none",
+                  fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase", fontWeight: 500, cursor: "pointer", transition: "all 0.3s ease",
                 }}
-                onMouseEnter={(e) => ((e.target as HTMLElement).style.background = "#5b4223")}
-                onMouseLeave={(e) => ((e.target as HTMLElement).style.background = "var(--primary)")}
+                onMouseEnter={(e) => ((e.target as HTMLElement).style.background = "var(--primary)")}
+                onMouseLeave={(e) => ((e.target as HTMLElement).style.background = "var(--charcoal)")}
               >
-                Shop by Moment
+                Shop Now
               </button>
               <button
                 onClick={() => navigate("gift-guide")}
                 style={{
-                  padding: "16px 36px", background: "transparent", color: "var(--charcoal)",
-                  border: "1px solid var(--outline-variant)", fontSize: 11, letterSpacing: "0.2em",
-                  textTransform: "uppercase", fontWeight: 600, cursor: "pointer", transition: "all 0.3s ease",
+                  padding: "15px 40px", background: "transparent", color: "var(--charcoal)",
+                  border: "1px solid var(--charcoal)", fontSize: 11, letterSpacing: "0.18em",
+                  textTransform: "uppercase", fontWeight: 500, cursor: "pointer", transition: "all 0.3s ease",
                 }}
-                onMouseEnter={(e) => { (e.target as HTMLElement).style.borderColor = "var(--primary)"; (e.target as HTMLElement).style.color = "var(--primary)"; }}
-                onMouseLeave={(e) => { (e.target as HTMLElement).style.borderColor = "var(--outline-variant)"; (e.target as HTMLElement).style.color = "var(--charcoal)"; }}
+                onMouseEnter={(e) => { (e.target as HTMLElement).style.background = "var(--charcoal)"; (e.target as HTMLElement).style.color = "white"; }}
+                onMouseLeave={(e) => { (e.target as HTMLElement).style.background = "transparent"; (e.target as HTMLElement).style.color = "var(--charcoal)"; }}
               >
-                Find the Perfect Gift
+                Find a Gift
               </button>
-              <div
-                className="animate-fade-up stagger-5"
-                onClick={() => (window as any).scrollExperience?.open("ring")}
-                style={{
-                  display: "flex", alignItems: "center", gap: 8,
-                  color: "var(--on-surface-variant)", fontSize: 10, letterSpacing: "0.15em",
-                  textTransform: "uppercase", opacity: 0.6, cursor: "pointer",
-                  animation: "se-nudge 3s ease-in-out infinite",
-                }}
-              >
-                <Icon name="swipe_left" size={16} />
-                Swipe left to experience Memoir
-                <Icon name="arrow_back" size={14} />
-              </div>
             </div>
+          </div>
+        </div>
+
+        {/* Scroll Experience peek strip — right edge */}
+        <div
+          className="hero-peek-strip"
+          onClick={() => (window as any).scrollExperience?.open("ring")}
+          style={{
+            position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)",
+            zIndex: 3, cursor: "pointer",
+            background: "rgba(44,44,44,0.85)", backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
+            padding: "24px 16px", borderRadius: "8px 0 0 8px",
+            display: "flex", flexDirection: "column", alignItems: "center", gap: 14,
+            boxShadow: "-4px 0 20px rgba(0,0,0,0.08)",
+            animation: "hero-peek-slide 3s ease-in-out infinite",
+          }}
+        >
+          {/* Animated arrow */}
+          <span className="material-symbols-outlined" style={{
+            fontSize: 18, color: "rgba(255,255,255,0.9)",
+            animation: "hero-arrow-slide 2s ease-in-out infinite",
+          }}>chevron_left</span>
+
+          {/* Vertical label */}
+          <span style={{
+            writingMode: "vertical-rl", textOrientation: "mixed",
+            fontSize: 9, letterSpacing: "0.22em", textTransform: "uppercase",
+            color: "rgba(255,255,255,0.75)", fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
+          }}>Experience</span>
+
+          {/* Small ring icon hint */}
+          <div style={{
+            width: 28, height: 28, borderRadius: "50%", border: "1.5px solid rgba(201,169,110,0.6)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            animation: "hero-peek-glow 3s ease-in-out infinite",
+          }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 14, color: "var(--gold)" }}>diamond</span>
           </div>
         </div>
       </section>
