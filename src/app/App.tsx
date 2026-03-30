@@ -1186,34 +1186,45 @@ function ProductPage({ productId, navigate, onAddToCart }: {
 
               {/* Gift Message */}
               {isGift && (
-                <div className="animate-fade-in" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  <label className="font-serif" style={{ fontSize: 15, fontStyle: "italic", color: "var(--primary)" }}>
-                    What would you say to her if she were here right now?
-                  </label>
+                <div className="animate-fade-in" style={{ display: "flex", flexDirection: "column", gap: 0, background: "var(--surface-dim)", padding: "20px 20px 16px", border: "1px solid rgba(201,169,110,0.15)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+                    <div style={{ width: 20, height: 1, background: "var(--gold)", opacity: 0.5 }} />
+                    <span style={{ fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--gold)", fontWeight: 600 }}>Your Note</span>
+                  </div>
                   <textarea
                     value={giftMessage}
                     onChange={(e) => setGiftMessage(e.target.value)}
-                    placeholder="Write your message..."
+                    placeholder="Write something she'll keep forever..."
                     rows={3}
                     style={{
-                      width: "100%", padding: 16, border: "1px solid var(--outline-variant)",
-                      background: "white", fontSize: 14, fontFamily: "'Caveat', cursive",
-                      resize: "vertical", lineHeight: 1.6,
+                      width: "100%", padding: "14px 16px", border: "none", borderBottom: "1px solid rgba(201,169,110,0.25)",
+                      background: "transparent", fontSize: 15, fontFamily: "'Cormorant Garamond', serif",
+                      fontStyle: "italic", resize: "none", lineHeight: 1.7, color: "var(--on-surface)",
+                      outline: "none",
                     }}
                   />
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    {["For your new beginning. I'm so proud of you.", "Because you deserve something beautiful.", "I chose this for the same reason I chose you."].map((msg) => (
+                  <p style={{ fontSize: 10, color: "var(--on-surface-variant)", opacity: 0.6, marginTop: 10, marginBottom: 10, letterSpacing: "0.02em" }}>
+                    Or choose a note from us:
+                  </p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                    {[
+                      { text: "For your new beginning. I\u2019m so proud of you.", icon: "\u2727" },
+                      { text: "Because you deserve something beautiful.", icon: "\u2727" },
+                      { text: "I chose this for the same reason I chose you.", icon: "\u2727" },
+                    ].map((msg) => (
                       <button
-                        key={msg}
-                        onClick={() => setGiftMessage(msg)}
+                        key={msg.text}
+                        onClick={() => setGiftMessage(msg.text)}
                         style={{
-                          padding: "6px 12px", fontSize: 11, border: "1px solid var(--outline-variant)",
-                          background: giftMessage === msg ? "var(--primary)" : "transparent",
-                          color: giftMessage === msg ? "white" : "var(--on-surface-variant)",
-                          cursor: "pointer", transition: "all 0.2s ease", fontStyle: "italic",
+                          padding: "10px 0", fontSize: 13, border: "none", borderBottom: "1px solid rgba(210,196,184,0.15)",
+                          background: "transparent", color: giftMessage === msg.text ? "var(--primary)" : "var(--on-surface-variant)",
+                          cursor: "pointer", transition: "all 0.2s ease", fontFamily: "'Cormorant Garamond', serif",
+                          fontStyle: "italic", textAlign: "left", display: "flex", alignItems: "center", gap: 10,
+                          fontWeight: giftMessage === msg.text ? 600 : 400,
                         }}
                       >
-                        {msg}
+                        <span style={{ fontSize: 8, opacity: giftMessage === msg.text ? 1 : 0.3, color: "var(--gold)", transition: "opacity 0.2s" }}>{msg.icon}</span>
+                        {msg.text}
                       </button>
                     ))}
                   </div>
