@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef, createContext, useContext } from "react";
 import { useProducts, useShopifyCart, useCollections, type CartItem, type MemoirCollection } from "../lib/useShopify";
 import type { MemoirProduct } from "../lib/shopify";
+import { auth as firebaseAuth, googleProvider, RecaptchaVerifier, signInWithPhoneNumber, signInWithPopup } from "../lib/firebase";
+import type { ConfirmationResult } from "firebase/auth";
 
 // ============================================================
 // MEMOIR — Complete Website
@@ -296,6 +298,9 @@ interface AuthContextType {
   updateProfile: (fields: Partial<UserProfile>) => void;
   savedCart: CartItem[];
   saveCart: (cart: CartItem[]) => void;
+  loginWithGoogle: () => Promise<string | null>;
+  loginWithPhone: (phone: string, recaptchaContainer: HTMLElement) => Promise<ConfirmationResult>;
+  verifyOtp: (confirmationResult: ConfirmationResult, otp: string) => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -305,6 +310,9 @@ const AuthContext = createContext<AuthContextType>({
   addAddress: () => {}, updateAddress: () => {}, deleteAddress: () => {},
   setDefaultAddress: () => {}, getDefaultAddress: () => undefined,
   updateProfile: () => {}, savedCart: [], saveCart: () => {},
+  loginWithGoogle: async () => "Not initialized",
+  loginWithPhone: async () => { throw new Error("Not initialized"); },
+  verifyOtp: async () => "Not initialized",
 });
 const useAuth = () => useContext(AuthContext);
 
@@ -433,11 +441,93 @@ function useAuthProvider() {
     saveUserData(user.email, { cart });
   }, [user]);
 
+  // --- Firebase: Google SSO ---
+  const loginWithGoogle = useCallback(async (): Promise<string | null> => {
+    try {
+      const result = await signInWithPopup(firebaseAuth, googleProvider);
+      const fbUser = result.user;
+      const email = (fbUser.email || `google_${fbUser.uid}`).toLowerCase();
+      const users = getStoredUsers();
+      if (!users[email]) {
+        const profile: UserProfile = {
+          id: fbUser.uid,
+          name: fbUser.displayName || "Google User",
+          email,
+          phone: fbUser.phoneNumber || "",
+          createdAt: new Date().toISOString(),
+        };
+        users[email] = { password: `__firebase_${fbUser.uid}__`, data: { profile, wishlist: [], addresses: [], cart: [] } };
+        saveStoredUsers(users);
+      } else {
+        // Update display name and photo if available
+        const existing = users[email].data.profile;
+        if (fbUser.displayName && existing.name !== fbUser.displayName) {
+          existing.name = fbUser.displayName;
+          saveStoredUsers(users);
+        }
+      }
+      setAuthEmail(email);
+      setUser(users[email].data.profile);
+      setWishlist(users[email].data.wishlist || []);
+      setAddresses(users[email].data.addresses || []);
+      setSavedCart(users[email].data.cart || []);
+      return null;
+    } catch (err: any) {
+      if (err?.code === "auth/popup-closed-by-user") return "Sign-in popup was closed";
+      return err?.message || "Google sign-in failed";
+    }
+  }, []);
+
+  // --- Firebase: Phone OTP ---
+  const loginWithPhone = useCallback(async (phoneNumber: string, recaptchaContainer: HTMLElement): Promise<ConfirmationResult> => {
+    // Clear any existing recaptcha
+    if ((window as any).__memoir_recaptcha) {
+      (window as any).__memoir_recaptcha.clear();
+      (window as any).__memoir_recaptcha = null;
+    }
+    recaptchaContainer.innerHTML = "";
+    const recaptchaVerifier = new RecaptchaVerifier(firebaseAuth, recaptchaContainer, { size: "invisible" });
+    (window as any).__memoir_recaptcha = recaptchaVerifier;
+    const confirmation = await signInWithPhoneNumber(firebaseAuth, phoneNumber, recaptchaVerifier);
+    return confirmation;
+  }, []);
+
+  const verifyOtp = useCallback(async (confirmationResult: ConfirmationResult, otp: string): Promise<string | null> => {
+    try {
+      const result = await confirmationResult.confirm(otp);
+      const fbUser = result.user;
+      const key = (fbUser.phoneNumber || `phone_${fbUser.uid}`).toLowerCase();
+      const users = getStoredUsers();
+      if (!users[key]) {
+        const profile: UserProfile = {
+          id: fbUser.uid,
+          name: fbUser.displayName || "User",
+          email: fbUser.email || "",
+          phone: fbUser.phoneNumber || key,
+          createdAt: new Date().toISOString(),
+        };
+        users[key] = { password: `__firebase_${fbUser.uid}__`, data: { profile, wishlist: [], addresses: [], cart: [] } };
+        saveStoredUsers(users);
+      }
+      setAuthEmail(key);
+      setUser(users[key].data.profile);
+      setWishlist(users[key].data.wishlist || []);
+      setAddresses(users[key].data.addresses || []);
+      setSavedCart(users[key].data.cart || []);
+      return null;
+    } catch (err: any) {
+      if (err?.code === "auth/invalid-verification-code") return "Invalid OTP code";
+      if (err?.code === "auth/code-expired") return "OTP has expired, please resend";
+      return err?.message || "OTP verification failed";
+    }
+  }, []);
+
   return {
     user, isLoggedIn: !!user, wishlist, addresses,
     login, signup, logout, toggleWishlist, isWishlisted,
     addAddress, updateAddress, deleteAddress, setDefaultAddress, getDefaultAddress,
     updateProfile, savedCart, saveCart,
+    loginWithGoogle, loginWithPhone, verifyOtp,
   };
 }
 
@@ -452,13 +542,47 @@ function AuthModal({ isOpen, onClose, initialMode = "login" }: {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  // Phone OTP state
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpDigits, setOtpDigits] = useState(["", "", "", "", "", ""]);
+  const [phoneLoading, setPhoneLoading] = useState(false);
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+  const recaptchaRef = useRef<HTMLDivElement>(null);
+  const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
+
   const auth = useAuth();
 
-  useEffect(() => { if (isOpen) { setMode(initialMode); setError(""); } }, [isOpen, initialMode]);
+  useEffect(() => {
+    if (isOpen) {
+      setMode(initialMode);
+      setError("");
+      setOtpSent(false);
+      setOtpDigits(["", "", "", "", "", ""]);
+      setConfirmationResult(null);
+      setPhoneNumber("");
+      setGoogleLoading(false);
+      setPhoneLoading(false);
+      setOtpLoading(false);
+    }
+  }, [isOpen, initialMode]);
+
+  // Cleanup recaptcha on unmount
+  useEffect(() => {
+    return () => {
+      if ((window as any).__memoir_recaptcha) {
+        try { (window as any).__memoir_recaptcha.clear(); } catch {}
+        (window as any).__memoir_recaptcha = null;
+      }
+    };
+  }, []);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleEmailSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     if (mode === "login") {
@@ -472,10 +596,86 @@ function AuthModal({ isOpen, onClose, initialMode = "login" }: {
     }
   };
 
-  const inputStyle = {
+  const handleGoogleSignIn = async () => {
+    setError("");
+    setGoogleLoading(true);
+    try {
+      const err = await auth.loginWithGoogle();
+      if (err) setError(err); else onClose();
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  const handleSendOtp = async () => {
+    setError("");
+    if (!phoneNumber || phoneNumber.length < 10) {
+      setError("Please enter a valid 10-digit phone number");
+      return;
+    }
+    setPhoneLoading(true);
+    try {
+      const fullNumber = `+91${phoneNumber.replace(/\D/g, "").slice(-10)}`;
+      const confirmation = await auth.loginWithPhone(fullNumber, recaptchaRef.current!);
+      setConfirmationResult(confirmation);
+      setOtpSent(true);
+      setOtpDigits(["", "", "", "", "", ""]);
+      setTimeout(() => otpRefs.current[0]?.focus(), 100);
+    } catch (err: any) {
+      setError(err?.message || "Failed to send OTP");
+    } finally {
+      setPhoneLoading(false);
+    }
+  };
+
+  const handleOtpChange = (index: number, value: string) => {
+    if (value.length > 1) value = value.slice(-1);
+    if (value && !/^\d$/.test(value)) return;
+    const next = [...otpDigits];
+    next[index] = value;
+    setOtpDigits(next);
+    if (value && index < 5) {
+      otpRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === "Backspace" && !otpDigits[index] && index > 0) {
+      otpRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    setError("");
+    const otp = otpDigits.join("");
+    if (otp.length !== 6) { setError("Please enter all 6 digits"); return; }
+    if (!confirmationResult) { setError("Please send OTP first"); return; }
+    setOtpLoading(true);
+    try {
+      const err = await auth.verifyOtp(confirmationResult, otp);
+      if (err) setError(err); else onClose();
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const inputStyle: React.CSSProperties = {
     width: "100%", padding: "14px 16px", border: "1px solid var(--outline-variant)",
     background: "white", fontSize: 14, fontFamily: "'DM Sans', sans-serif", borderRadius: 0,
-    outline: "none", transition: "border-color 0.2s",
+    outline: "none", transition: "border-color 0.2s", boxSizing: "border-box",
+  };
+
+  const dividerStyle: React.CSSProperties = {
+    display: "flex", alignItems: "center", gap: 12, margin: "4px 0",
+  };
+
+  const dividerLineStyle: React.CSSProperties = {
+    flex: 1, height: 1, background: "var(--outline-variant)",
+  };
+
+  const labelStyle: React.CSSProperties = {
+    fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase",
+    color: "var(--on-surface-variant)", display: "block", marginBottom: 6,
   };
 
   return (
@@ -483,8 +683,8 @@ function AuthModal({ isOpen, onClose, initialMode = "login" }: {
       <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1000, backdropFilter: "blur(4px)" }} />
       <div style={{
         position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
-        width: "min(420px, 90vw)", background: "var(--ivory)", zIndex: 1001,
-        boxShadow: "0 24px 80px rgba(0,0,0,0.15)", overflow: "hidden",
+        width: "min(420px, 90vw)", maxHeight: "90vh", background: "var(--ivory)", zIndex: 1001,
+        boxShadow: "0 24px 80px rgba(0,0,0,0.15)", overflow: "auto",
       }}>
         {/* Header */}
         <div style={{ padding: "32px 32px 0", textAlign: "center" }}>
@@ -497,56 +697,205 @@ function AuthModal({ isOpen, onClose, initialMode = "login" }: {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ padding: "24px 32px 32px", display: "flex", flexDirection: "column", gap: 14 }}>
-          {mode === "signup" && (
-            <div>
-              <label style={{ fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--on-surface-variant)", display: "block", marginBottom: 6 }}>Full Name *</label>
-              <input value={name} onChange={e => setName(e.target.value)} placeholder="Your name" style={inputStyle} />
-            </div>
-          )}
-          <div>
-            <label style={{ fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--on-surface-variant)", display: "block", marginBottom: 6 }}>Email *</label>
-            <input value={email} onChange={e => setEmail(e.target.value)} placeholder="you@email.com" type="email" style={inputStyle} />
-          </div>
-          {mode === "signup" && (
-            <div>
-              <label style={{ fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--on-surface-variant)", display: "block", marginBottom: 6 }}>Phone</label>
-              <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+91 98765 43210" style={inputStyle} />
-            </div>
-          )}
-          <div>
-            <label style={{ fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--on-surface-variant)", display: "block", marginBottom: 6 }}>Password *</label>
-            <div style={{ position: "relative" }}>
-              <input value={password} onChange={e => setPassword(e.target.value)} placeholder={mode === "signup" ? "Min 6 characters" : "Your password"} type={showPassword ? "text" : "password"} style={inputStyle} />
-              <button type="button" onClick={() => setShowPassword(!showPassword)} style={{
-                position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
-                background: "none", border: "none", cursor: "pointer", color: "var(--on-surface-variant)",
-              }}>
-                <Icon name={showPassword ? "visibility_off" : "visibility"} size={18} />
-              </button>
-            </div>
+        <div style={{ padding: "24px 32px 32px", display: "flex", flexDirection: "column", gap: 14 }}>
+
+          {/* --- 1. Google Sign-In --- */}
+          <button
+            type="button"
+            onClick={handleGoogleSignIn}
+            disabled={googleLoading}
+            style={{
+              width: "100%", padding: "14px 16px", background: "white", border: "1px solid var(--outline-variant)",
+              cursor: googleLoading ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+              gap: 10, fontSize: 14, fontFamily: "'DM Sans', sans-serif", color: "var(--on-surface)",
+              transition: "background 0.2s, box-shadow 0.2s", borderRadius: 0,
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "#f5f5f5"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "white"; }}
+          >
+            {/* Google "G" SVG */}
+            <svg width="18" height="18" viewBox="0 0 48 48">
+              <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+              <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+              <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+              <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+              <path fill="none" d="M0 0h48v48H0z"/>
+            </svg>
+            {googleLoading ? "Signing in..." : "Continue with Google"}
+          </button>
+
+          {/* --- Divider --- */}
+          <div style={dividerStyle}>
+            <div style={dividerLineStyle} />
+            <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--outline)", fontWeight: 500 }}>or</span>
+            <div style={dividerLineStyle} />
           </div>
 
+          {/* --- 2. Phone + OTP --- */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <label style={labelStyle}>Phone Number</label>
+            <div style={{ display: "flex", gap: 0 }}>
+              <div style={{
+                padding: "14px 12px", background: "var(--surface-dim)", border: "1px solid var(--outline-variant)",
+                borderRight: "none", fontSize: 14, fontFamily: "'DM Sans', sans-serif", color: "var(--on-surface-variant)",
+                display: "flex", alignItems: "center", whiteSpace: "nowrap",
+              }}>+91</div>
+              <input
+                value={phoneNumber}
+                onChange={e => setPhoneNumber(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                placeholder="98765 43210"
+                type="tel"
+                disabled={otpSent}
+                style={{ ...inputStyle, borderRadius: 0 }}
+              />
+            </div>
+
+            {!otpSent ? (
+              <button
+                type="button"
+                onClick={handleSendOtp}
+                disabled={phoneLoading}
+                style={{
+                  width: "100%", padding: "14px", background: "var(--charcoal)", color: "white", border: "none",
+                  fontSize: 12, letterSpacing: "0.15em", textTransform: "uppercase", fontWeight: 600,
+                  cursor: phoneLoading ? "wait" : "pointer", borderRadius: 0,
+                }}
+              >
+                {phoneLoading ? "Sending..." : "Send OTP"}
+              </button>
+            ) : (
+              <>
+                <label style={{ ...labelStyle, marginTop: 4 }}>Enter 6-Digit OTP</label>
+                <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+                  {otpDigits.map((digit, i) => (
+                    <input
+                      key={i}
+                      ref={el => { otpRefs.current[i] = el; }}
+                      value={digit}
+                      onChange={e => handleOtpChange(i, e.target.value)}
+                      onKeyDown={e => handleOtpKeyDown(i, e)}
+                      onPaste={e => {
+                        e.preventDefault();
+                        const paste = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+                        const next = [...otpDigits];
+                        for (let j = 0; j < 6; j++) next[j] = paste[j] || "";
+                        setOtpDigits(next);
+                        const focusIdx = Math.min(paste.length, 5);
+                        otpRefs.current[focusIdx]?.focus();
+                      }}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={1}
+                      style={{
+                        width: 44, height: 52, textAlign: "center", fontSize: 20, fontWeight: 600,
+                        border: "1px solid var(--outline-variant)", background: "white",
+                        fontFamily: "'DM Sans', sans-serif", outline: "none", borderRadius: 0,
+                        transition: "border-color 0.2s",
+                      }}
+                      onFocus={e => { e.currentTarget.style.borderColor = "var(--primary)"; }}
+                      onBlur={e => { e.currentTarget.style.borderColor = "var(--outline-variant)"; }}
+                    />
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={handleVerifyOtp}
+                  disabled={otpLoading}
+                  style={{
+                    width: "100%", padding: "14px", background: "var(--primary)", color: "white", border: "none",
+                    fontSize: 12, letterSpacing: "0.15em", textTransform: "uppercase", fontWeight: 600,
+                    cursor: otpLoading ? "wait" : "pointer", borderRadius: 0, marginTop: 2,
+                  }}
+                >
+                  {otpLoading ? "Verifying..." : "Verify & Sign In"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setOtpSent(false); setConfirmationResult(null); setOtpDigits(["", "", "", "", "", ""]); }}
+                  style={{
+                    background: "none", border: "none", cursor: "pointer", color: "var(--on-surface-variant)",
+                    fontSize: 12, textDecoration: "underline", textAlign: "center",
+                  }}
+                >
+                  Change number
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* --- Divider --- */}
+          <div style={dividerStyle}>
+            <div style={dividerLineStyle} />
+            <span style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--outline)", fontWeight: 500 }}>or</span>
+            <div style={dividerLineStyle} />
+          </div>
+
+          {/* --- 3. Email/Password (de-emphasized) --- */}
+          <details style={{ borderTop: "none" }}>
+            <summary style={{
+              cursor: "pointer", fontSize: 13, color: "var(--on-surface-variant)", textAlign: "center",
+              listStyle: "none", padding: "4px 0", userSelect: "none",
+            }}>
+              <span style={{ borderBottom: "1px dashed var(--outline-variant)", paddingBottom: 1 }}>
+                {mode === "login" ? "Sign in with email & password" : "Sign up with email & password"}
+              </span>
+            </summary>
+            <form onSubmit={handleEmailSubmit} style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 12 }}>
+              {mode === "signup" && (
+                <div>
+                  <label style={labelStyle}>Full Name *</label>
+                  <input value={name} onChange={e => setName(e.target.value)} placeholder="Your name" style={inputStyle} />
+                </div>
+              )}
+              <div>
+                <label style={labelStyle}>Email *</label>
+                <input value={email} onChange={e => setEmail(e.target.value)} placeholder="you@email.com" type="email" style={inputStyle} />
+              </div>
+              {mode === "signup" && (
+                <div>
+                  <label style={labelStyle}>Phone</label>
+                  <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+91 98765 43210" style={inputStyle} />
+                </div>
+              )}
+              <div>
+                <label style={labelStyle}>Password *</label>
+                <div style={{ position: "relative" }}>
+                  <input value={password} onChange={e => setPassword(e.target.value)} placeholder={mode === "signup" ? "Min 6 characters" : "Your password"} type={showPassword ? "text" : "password"} style={inputStyle} />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} style={{
+                    position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
+                    background: "none", border: "none", cursor: "pointer", color: "var(--on-surface-variant)",
+                  }}>
+                    <Icon name={showPassword ? "visibility_off" : "visibility"} size={18} />
+                  </button>
+                </div>
+              </div>
+              <button type="submit" style={{
+                width: "100%", padding: "14px", background: "var(--primary)", color: "white", border: "none",
+                fontSize: 12, letterSpacing: "0.2em", textTransform: "uppercase", fontWeight: 600, cursor: "pointer",
+                opacity: 0.85,
+              }}>
+                {mode === "login" ? "Sign In" : "Create Account"}
+              </button>
+            </form>
+          </details>
+
+          {/* Error */}
           {error && (
             <p style={{ fontSize: 12, color: "#c0392b", background: "rgba(192,57,43,0.06)", padding: "10px 14px", margin: 0 }}>{error}</p>
           )}
 
-          <button type="submit" style={{
-            width: "100%", padding: "16px", background: "var(--primary)", color: "white", border: "none",
-            fontSize: 12, letterSpacing: "0.2em", textTransform: "uppercase", fontWeight: 600, cursor: "pointer",
-            marginTop: 4,
-          }}>
-            {mode === "login" ? "Sign In" : "Create Account"}
-          </button>
-
-          <p style={{ textAlign: "center", fontSize: 13, color: "var(--on-surface-variant)", marginTop: 4 }}>
+          {/* Toggle login/signup */}
+          <p style={{ textAlign: "center", fontSize: 13, color: "var(--on-surface-variant)", marginTop: 2 }}>
             {mode === "login" ? "Don\u2019t have an account? " : "Already have an account? "}
-            <button type="button" onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); }}
+            <button type="button" onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); setOtpSent(false); }}
               style={{ background: "none", border: "none", color: "var(--primary)", cursor: "pointer", fontSize: 13, fontWeight: 600, textDecoration: "underline" }}>
               {mode === "login" ? "Sign Up" : "Sign In"}
             </button>
           </p>
-        </form>
+
+          {/* Hidden reCAPTCHA container */}
+          <div id="recaptcha-container" ref={recaptchaRef} style={{ display: "none" }} />
+        </div>
 
         {/* Close */}
         <button onClick={onClose} style={{
