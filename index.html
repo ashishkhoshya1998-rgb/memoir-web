@@ -1,19 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Memoir — Coming Soon</title>
+  <meta name="description" content="Memoir — Jewellery, as a memory you can touch. 925 Sterling Silver. Coming Soon." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-  <!DOCTYPE html>
-  <html lang="en">
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-      <title>Memoir App</title>
-    </head>
+    :root {
+      --cream: #FAF7F2;
+      --charcoal: #1A1C1A;
+      --gold: #C9A96E;
+      --gold-light: #D4B87C;
+      --text-muted: #8A8680;
+    }
 
-    <body>
-      <div id="root"></div>
-      <script type="module" src="/src/main.tsx"></script>
-      <!-- Scroll Experience disabled for now
-      <link rel="stylesheet" href="/scroll-experience.css" />
-      <script src="/scroll-experience.js" defer></script>
-      -->
-    </body>
-  </html>
-  
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--cream);
+      color: var(--charcoal);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Subtle animated background grain */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      opacity: 0.03;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 40px 24px;
+      max-width: 520px;
+    }
+
+    /* Logo */
+    .logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(36px, 8vw, 56px);
+      font-weight: 300;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--charcoal);
+      margin-bottom: 48px;
+      animation: fadeDown 1s ease-out 0.2s both;
+    }
+
+    /* Divider line */
+    .divider {
+      width: 40px;
+      height: 1px;
+      background: var(--gold);
+      margin: 0 auto 40px;
+      animation: fadeIn 1s ease-out 0.6s both;
+    }
+
+    /* Coming Soon text */
+    .coming-soon {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 10px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--gold);
+      font-weight: 500;
+      margin-bottom: 24px;
+      animation: fadeIn 1s ease-out 0.8s both;
+    }
+
+    /* Tagline */
+    .tagline {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(24px, 5vw, 34px);
+      font-weight: 300;
+      font-style: italic;
+      line-height: 1.3;
+      color: var(--charcoal);
+      margin-bottom: 16px;
+      animation: fadeUp 1s ease-out 1s both;
+    }
+
+    /* Subtitle */
+    .subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.7;
+      margin-bottom: 48px;
+      animation: fadeUp 1s ease-out 1.2s both;
+    }
+
+    /* Material badge */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 20px;
+      border: 1px solid rgba(201, 169, 110, 0.3);
+      border-radius: 2px;
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      animation: fadeUp 1s ease-out 1.4s both;
+    }
+
+    .badge .dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--gold);
+    }
+
+    /* Floating contact at bottom */
+    .contact {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      animation: fadeIn 1s ease-out 1.8s both;
+    }
+
+    .contact a {
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.3s ease;
+    }
+
+    .contact a:hover {
+      color: var(--gold);
+    }
+
+    .contact .sep {
+      width: 3px;
+      height: 3px;
+      border-radius: 50%;
+      background: rgba(138, 134, 128, 0.4);
+    }
+
+    /* Animated gold shimmer on the divider */
+    .divider::after {
+      content: '';
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent 0%, var(--gold-light) 50%, transparent 100%);
+      animation: shimmer 3s ease-in-out infinite;
+    }
+
+    /* Animations */
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes shimmer {
+      0%, 100% { opacity: 0.3; transform: scaleX(0.5); }
+      50% { opacity: 1; transform: scaleX(1); }
+    }
+
+    /* Floating ambient circles */
+    .ambient {
+      position: fixed;
+      border-radius: 50%;
+      background: var(--gold);
+      opacity: 0.04;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .ambient-1 {
+      width: 400px; height: 400px;
+      top: -100px; right: -100px;
+      animation: float1 12s ease-in-out infinite;
+    }
+
+    .ambient-2 {
+      width: 300px; height: 300px;
+      bottom: -80px; left: -80px;
+      animation: float2 15s ease-in-out infinite;
+    }
+
+    .ambient-3 {
+      width: 200px; height: 200px;
+      top: 40%; left: 60%;
+      animation: float3 10s ease-in-out infinite;
+    }
+
+    @keyframes float1 {
+      0%, 100% { transform: translate(0, 0); }
+      50% { transform: translate(-30px, 20px); }
+    }
+
+    @keyframes float2 {
+      0%, 100% { transform: translate(0, 0); }
+      50% { transform: translate(20px, -30px); }
+    }
+
+    @keyframes float3 {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(-20px, 15px) scale(1.1); }
+    }
+  </style>
+</head>
+<body>
+  <!-- Ambient floating shapes -->
+  <div class="ambient ambient-1"></div>
+  <div class="ambient ambient-2"></div>
+  <div class="ambient ambient-3"></div>
+
+  <div class="container">
+    <h1 class="logo">Memoir</h1>
+    <div class="divider"></div>
+    <p class="coming-soon">Coming Soon</p>
+    <p class="tagline">Jewellery, as a memory<br>you can touch</p>
+    <p class="subtitle">925 sterling silver, handcrafted for the<br>moments worth remembering.</p>
+    <div class="badge">
+      <span>925 Sterling Silver</span>
+      <span class="dot"></span>
+      <span>BIS Hallmarked</span>
+      <span class="dot"></span>
+      <span>Handcrafted in India</span>
+    </div>
+  </div>
+
+  <div class="contact">
+    <a href="mailto:hello@memoir.in">hello@memoir.in</a>
+    <span class="sep"></span>
+    <a href="https://wa.me/917042816328" target="_blank">WhatsApp</a>
+  </div>
+</body>
+</html>
