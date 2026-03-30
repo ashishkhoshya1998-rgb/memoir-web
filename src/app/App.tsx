@@ -861,24 +861,14 @@ const GLOBAL_STYLES = `
   .stagger-4 { animation-delay: 0.4s; opacity: 0; }
   .stagger-5 { animation-delay: 0.6s; opacity: 0; }
   @keyframes se-nudge { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(-6px); } }
-  @keyframes hero-peek-slide {
-    0%, 100% { transform: translateX(6px); }
-    50% { transform: translateX(-2px); }
+  @keyframes hero-peek-pulse {
+    0%, 100% { opacity: 0.35; }
+    50% { opacity: 0.6; }
   }
-  @keyframes hero-peek-glow {
-    0%, 100% { opacity: 0.5; }
-    50% { opacity: 1; }
-  }
-  @keyframes hero-arrow-slide {
-    0%, 100% { transform: translateX(0); opacity: 0.4; }
-    50% { transform: translateX(-6px); opacity: 1; }
-  }
-  .hero-peek-strip { transition: transform 0.3s ease, box-shadow 0.3s ease; }
-  .hero-peek-strip:hover { transform: translateX(-8px) !important; box-shadow: -8px 0 30px rgba(0,0,0,0.15) !important; }
-  .hero-peek-strip:hover .hero-peek-label { opacity: 1 !important; }
+  .hero-peek-strip { transition: transform 0.3s ease, opacity 0.3s ease; }
+  .hero-peek-strip:hover { transform: translateY(-50%) translateX(-4px) !important; opacity: 0.9 !important; }
   @media (max-width: 480px) {
-    .hero-peek-strip { padding: 16px 10px !important; }
-    .hero-peek-strip span[style*="vertical"] { font-size: 7px !important; }
+    .hero-peek-strip { padding: 12px 6px !important; }
   }
   .hover-lift { transition: transform 0.4s ease, box-shadow 0.4s ease; }
   .hover-lift:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(26,28,26,0.08); }
@@ -972,7 +962,7 @@ const GLOBAL_STYLES = `
     .header-icons { gap: 14px !important; }
 
     /* Hero */
-    .hero-content { padding: 0 20px !important; padding-bottom: 60px !important; }
+    .hero-content { padding: 0 20px !important; padding-bottom: 100px !important; }
     .hero-text { max-width: 100% !important; }
     .hero-buttons { flex-direction: row !important; }
     .hero-buttons button { padding: 14px 28px !important; flex: 1; }
@@ -1348,42 +1338,24 @@ function HomePage({ navigate }: { navigate: (page: string, param?: string | null
           </div>
         </div>
 
-        {/* Scroll Experience peek strip — right edge */}
+        {/* Scroll Experience peek strip — subtle right edge hint */}
         <div
           className="hero-peek-strip"
           onClick={() => (window as any).scrollExperience?.open("ring")}
           style={{
             position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)",
             zIndex: 3, cursor: "pointer",
-            background: "rgba(44,44,44,0.85)", backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
-            padding: "24px 16px", borderRadius: "8px 0 0 8px",
-            display: "flex", flexDirection: "column", alignItems: "center", gap: 14,
-            boxShadow: "-4px 0 20px rgba(0,0,0,0.08)",
-            animation: "hero-peek-slide 3s ease-in-out infinite",
+            background: "rgba(44,44,44,0.18)", backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)",
+            padding: "16px 8px", borderRadius: "6px 0 0 6px",
+            display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
+            opacity: 0.5,
+            animation: "hero-peek-pulse 4s ease-in-out infinite",
           }}
         >
-          {/* Animated arrow */}
           <span className="material-symbols-outlined" style={{
-            fontSize: 18, color: "rgba(255,255,255,0.9)",
-            animation: "hero-arrow-slide 2s ease-in-out infinite",
+            fontSize: 14, color: "rgba(44,44,44,0.6)",
           }}>chevron_left</span>
-
-          {/* Vertical label */}
-          <span style={{
-            writingMode: "vertical-rl", textOrientation: "mixed",
-            fontSize: 9, letterSpacing: "0.22em", textTransform: "uppercase",
-            color: "rgba(255,255,255,0.75)", fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
-          }}>Experience</span>
-
-          {/* Small ring icon hint */}
-          <div style={{
-            width: 28, height: 28, borderRadius: "50%", border: "1.5px solid rgba(201,169,110,0.6)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            animation: "hero-peek-glow 3s ease-in-out infinite",
-          }}>
-            <span className="material-symbols-outlined" style={{ fontSize: 14, color: "var(--gold)" }}>diamond</span>
-          </div>
         </div>
       </section>
 
