@@ -2024,7 +2024,7 @@ function CartDrawer({ isOpen, onClose, cart, navigate, onRemoveFromCart }: {
               </p>
             )}
             <button
-              onClick={() => { onClose(); isShopifyConnected ? goToCheckout() : navigate("checkout"); }}
+              onClick={() => { onClose(); navigate("checkout"); }}
               style={{
                 width: "100%", padding: "16px", background: "var(--primary)", color: "white", border: "none",
                 fontSize: 12, letterSpacing: "0.2em", textTransform: "uppercase", fontWeight: 600, cursor: "pointer",
@@ -2435,16 +2435,19 @@ function ProfilePage({ navigate }: { navigate: (page: string, param?: string | n
 }
 
 // --- Checkout Page ---
-function CheckoutPage({ navigate, cart, onRemoveFromCart, onClearCart }: {
+function CheckoutPage({ navigate, cart, onRemoveFromCart, onClearCart, checkoutUrl, isShopifyConnected }: {
   navigate: (page: string, param?: string | null) => void;
   cart: CartItem[];
   onRemoveFromCart: (index: number) => void;
   onClearCart: () => void;
+  checkoutUrl?: string | null;
+  isShopifyConnected?: boolean;
 }) {
   const [step, setStep] = useState(1); // 1=Address, 2=Payment, 3=Confirmation
   const [address, setAddress] = useState({ name: "", phone: "", email: "", line1: "", line2: "", city: "", state: "", pincode: "", buyerName: "", buyerPhone: "", buyerEmail: "" });
   const [paymentMethod, setPaymentMethod] = useState("upi");
   const [orderPlaced, setOrderPlaced] = useState(false);
+  const [processingPayment, setProcessingPayment] = useState(false);
 
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const shipping = subtotal >= 1999 ? 0 : 99;
@@ -2454,6 +2457,16 @@ function CheckoutPage({ navigate, cart, onRemoveFromCart, onClearCart }: {
   const isAddressValid = address.name && address.phone && address.line1 && address.city && address.state && address.pincode && address.buyerName && address.buyerPhone && address.buyerEmail;
 
   const handlePlaceOrder = () => {
+    if (isShopifyConnected && checkoutUrl) {
+      // Redirect to Shopify's secure payment gateway
+      setProcessingPayment(true);
+      // Append shipping address as query params to Shopify checkout URL
+      const separator = checkoutUrl.includes("?") ? "&" : "?";
+      const shopifyUrl = `${checkoutUrl}${separator}checkout[shipping_address][first_name]=${encodeURIComponent(address.name.split(" ")[0])}&checkout[shipping_address][last_name]=${encodeURIComponent(address.name.split(" ").slice(1).join(" ") || " ")}&checkout[shipping_address][address1]=${encodeURIComponent(address.line1)}&checkout[shipping_address][address2]=${encodeURIComponent(address.line2)}&checkout[shipping_address][city]=${encodeURIComponent(address.city)}&checkout[shipping_address][province]=${encodeURIComponent(address.state)}&checkout[shipping_address][zip]=${encodeURIComponent(address.pincode)}&checkout[shipping_address][phone]=${encodeURIComponent(address.phone)}&checkout[email]=${encodeURIComponent(address.buyerEmail)}`;
+      window.location.href = shopifyUrl;
+      return;
+    }
+    // Fallback for non-Shopify mode
     setOrderPlaced(true);
     setStep(3);
     onClearCart();
@@ -2700,16 +2713,25 @@ function CheckoutPage({ navigate, cart, onRemoveFromCart, onClearCart }: {
 
                 <button
                   onClick={handlePlaceOrder}
+                  disabled={processingPayment}
                   style={{
-                    width: "100%", marginTop: 32, padding: "16px", background: "var(--primary)", color: "white", border: "none",
-                    fontSize: 12, letterSpacing: "0.2em", textTransform: "uppercase", fontWeight: 600, cursor: "pointer",
+                    width: "100%", marginTop: 32, padding: "16px",
+                    background: processingPayment ? "var(--on-surface-variant)" : "var(--primary)",
+                    color: "white", border: "none",
+                    fontSize: 12, letterSpacing: "0.2em", textTransform: "uppercase", fontWeight: 600,
+                    cursor: processingPayment ? "wait" : "pointer",
                     display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                    opacity: processingPayment ? 0.7 : 1, transition: "all 0.3s ease",
                   }}
                 >
-                  <Icon name="lock" size={14} /> Pay {formatPrice(total)}
+                  {processingPayment ? (
+                    <>Redirecting to Payment...</>
+                  ) : (
+                    <><Icon name="lock" size={14} /> {isShopifyConnected && checkoutUrl ? "Proceed to Secure Payment" : `Pay ${formatPrice(total)}`}</>
+                  )}
                 </button>
                 <p style={{ textAlign: "center", fontSize: 11, color: "var(--on-surface-variant)", marginTop: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
-                  <Icon name="verified_user" size={14} /> Secured by 256-bit SSL encryption
+                  <Icon name="verified_user" size={14} /> {isShopifyConnected ? "Secured by Shopify — 256-bit SSL encryption" : "Secured by 256-bit SSL encryption"}
                 </p>
               </div>
             )}
@@ -3073,14 +3095,10 @@ export default function App() {
   }, [shopifyCart.addItem]);
 
   const handleCheckout = useCallback(() => {
-    if (isShopifyConnected && shopifyCart.checkoutUrl) {
-      // Redirect to Shopify checkout
-      window.location.href = shopifyCart.checkoutUrl;
-    } else {
-      // Use built-in checkout
-      navigate("checkout");
-    }
-  }, [isShopifyConnected, shopifyCart.checkoutUrl, navigate]);
+    // Always use built-in checkout page — Shopify checkout URL is used
+    // only at the final "Pay" step to hand off to Shopify's payment gateway
+    navigate("checkout");
+  }, [navigate]);
 
   // Build the store context value
   const storeValue: StoreContextType = {
@@ -3116,7 +3134,7 @@ export default function App() {
       case "profile":
         return <ProfilePage navigate={navigate} />;
       case "checkout":
-        return <CheckoutPage navigate={navigate} cart={shopifyCart.cart} onRemoveFromCart={shopifyCart.removeItem} onClearCart={shopifyCart.clearAll} />;
+        return <CheckoutPage navigate={navigate} cart={shopifyCart.cart} onRemoveFromCart={shopifyCart.removeItem} onClearCart={shopifyCart.clearAll} checkoutUrl={shopifyCart.checkoutUrl} isShopifyConnected={isShopifyConnected} />;
       default:
         return <HomePage navigate={navigate} onAddToCart={handleAddToCart} />;
     }
