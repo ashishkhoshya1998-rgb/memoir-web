@@ -1187,29 +1187,26 @@ function ProductPage({ productId, navigate, onAddToCart }: {
               {/* Gift Message */}
               {isGift && (
                 <div className="animate-fade-in" style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-                  {/* Cream deckled-edge note card */}
+                  {/* Handwritten note card — warm cotton paper */}
                   <div style={{
                     position: "relative",
-                    background: "linear-gradient(170deg, #f7f3ea 0%, #f2ede3 40%, #ede7db 100%)",
-                    padding: "30px 28px 24px",
-                    boxShadow: "0 3px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06)",
+                    background: "#faf6ef",
+                    padding: "32px 30px 28px",
+                    border: "1px solid rgba(210,198,178,0.35)",
+                    borderRadius: 1,
+                    boxShadow: "0 4px 16px rgba(120,100,70,0.08), 0 1px 2px rgba(0,0,0,0.04)",
                     overflow: "hidden",
-                    /* Deckled / torn edges */
-                    clipPath: `polygon(
-                      0% 3px, 2% 0%, 5% 4px, 8% 1px, 12% 3px, 16% 0%, 20% 2px, 24% 0%, 29% 4px, 34% 1px, 38% 3px, 43% 0%, 48% 2px, 53% 0%, 58% 3px, 62% 1px, 67% 4px, 72% 0%, 77% 3px, 82% 1px, 87% 0%, 91% 3px, 95% 0%, 98% 2px, 100% 0%,
-                      100% calc(100% - 3px), 98% 100%, 95% calc(100% - 3px), 91% 100%, 87% calc(100% - 2px), 82% 100%, 77% calc(100% - 3px), 72% 100%, 67% calc(100% - 2px), 62% 100%, 58% calc(100% - 4px), 53% 100%, 48% calc(100% - 2px), 43% 100%, 38% calc(100% - 3px), 34% 100%, 29% calc(100% - 2px), 24% 100%, 20% calc(100% - 4px), 16% 100%, 12% calc(100% - 2px), 8% 100%, 5% calc(100% - 3px), 2% 100%, 0% calc(100% - 2px)
-                    )`,
                   }}>
-                    {/* Paper grain texture */}
+                    {/* Cotton paper fiber texture */}
                     <div style={{
-                      position: "absolute", inset: 0, opacity: 0.04,
-                      backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='6' height='6' viewBox='0 0 6 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23000' fill-opacity='1' fill-rule='evenodd'%3E%3Cpath d='M5 0h1L0 6V5zM6 5v1H5z'/%3E%3C/svg%3E\")",
-                      pointerEvents: "none",
+                      position: "absolute", inset: 0, opacity: 0.035, pointerEvents: "none",
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E")`,
+                      backgroundSize: "150px 150px",
                     }} />
-                    {/* Subtle warm inner shadow for depth */}
+                    {/* Warm edge vignette */}
                     <div style={{
                       position: "absolute", inset: 0, pointerEvents: "none",
-                      boxShadow: "inset 0 0 30px rgba(200,185,160,0.12), inset 0 2px 4px rgba(180,160,130,0.08)",
+                      boxShadow: "inset 0 0 50px rgba(195,178,150,0.1)",
                     }} />
                     <textarea
                       value={giftMessage}
@@ -1220,16 +1217,16 @@ function ProductPage({ productId, navigate, onAddToCart }: {
                         width: "100%", padding: 0, border: "none",
                         background: "transparent", fontSize: 18,
                         fontFamily: "'Caveat', cursive",
-                        resize: "none", lineHeight: 1.9, color: "#3d3529",
+                        resize: "none", lineHeight: 1.9, color: "#4a3f30",
                         outline: "none", letterSpacing: "0.01em",
                         position: "relative", zIndex: 1,
                       }}
                     />
-                    {/* Tiny Memoir watermark */}
+                    {/* Memoir watermark */}
                     <div style={{
-                      position: "absolute", bottom: 10, right: 16,
-                      fontSize: 8, letterSpacing: "0.2em", textTransform: "uppercase",
-                      color: "rgba(180,165,140,0.3)", fontWeight: 600, zIndex: 1,
+                      position: "absolute", bottom: 12, right: 18,
+                      fontSize: 7, letterSpacing: "0.25em", textTransform: "uppercase",
+                      color: "rgba(175,160,135,0.25)", fontWeight: 600, zIndex: 1,
                     }}>Memoir</div>
                   </div>
 
