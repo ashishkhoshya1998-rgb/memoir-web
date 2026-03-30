@@ -1289,15 +1289,16 @@ function ProductCard({ product, navigate, onAddToCart, style: cardStyle = {} }: 
         {/* Image dots — only if multiple images */}
         {images.length > 1 && (
           <div style={{
-            position: "absolute", bottom: 10, left: "50%", transform: "translateX(-50%)",
-            display: "flex", gap: 4, zIndex: 2,
+            position: "absolute", bottom: 12, left: "50%", transform: "translateX(-50%)",
+            display: "flex", gap: 6, zIndex: 2,
           }}>
             {images.map((_, i) => (
               <span key={i} onClick={(e) => { e.stopPropagation(); setImgIdx(i); }} style={{
-                width: i === imgIdx ? 16 : 5, height: 5, borderRadius: 3,
-                background: i === imgIdx ? "white" : "rgba(255,255,255,0.5)",
-                transition: "all 0.25s ease", cursor: "pointer",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                width: i === imgIdx ? 18 : 6, height: 3,
+                borderRadius: 0,
+                background: i === imgIdx ? "var(--gold)" : "rgba(255,255,255,0.5)",
+                transition: "all 0.3s ease", cursor: "pointer",
+                backdropFilter: "blur(4px)",
               }} />
             ))}
           </div>
@@ -1444,16 +1445,17 @@ function HomePage({ navigate }: { navigate: (page: string, param?: string | null
 
         {/* Carousel dots */}
         {heroSlides.length > 1 && (
-          <div style={{ position: "absolute", bottom: 24, left: "50%", transform: "translateX(-50%)", zIndex: 3, display: "flex", gap: 8 }}>
+          <div style={{ position: "absolute", bottom: 24, left: "50%", transform: "translateX(-50%)", zIndex: 3, display: "flex", gap: 6 }}>
             {heroSlides.map((_, i) => (
               <button
                 key={i}
                 onClick={() => setHeroIdx(i)}
                 style={{
-                  width: i === heroIdx ? 24 : 6, height: 6, borderRadius: 3,
-                  background: i === heroIdx ? "var(--charcoal)" : "rgba(44,44,44,0.3)",
+                  width: i === heroIdx ? 20 : 8, height: 3, borderRadius: 0,
+                  background: i === heroIdx ? "var(--gold)" : "rgba(44,44,44,0.25)",
                   border: "none", cursor: "pointer", padding: 0,
                   transition: "all 0.3s ease",
+                  backdropFilter: "blur(4px)",
                 }}
               />
             ))}
