@@ -42,7 +42,7 @@ export function useProducts(fallbackProducts: MemoirProduct[]) {
       .then((shopifyProducts) => {
         if (cancelled) return;
         // Filter out utility products (hero-banner is used for hero carousel, not for sale)
-        const saleProducts = shopifyProducts.filter((p) => p.handle !== "hero-banner");
+        const saleProducts = shopifyProducts.filter((p) => p.handle !== "hero-banner" && p.handle !== "hero-images");
         if (saleProducts.length > 0) {
           setProducts(saleProducts);
           setIsShopifyConnected(true);

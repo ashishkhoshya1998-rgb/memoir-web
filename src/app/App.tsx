@@ -1301,7 +1301,7 @@ function HomePage({ navigate }: { navigate: (page: string, param?: string | null
   const [heroIdx, setHeroIdx] = useState(0);
 
   useEffect(() => {
-    fetchProductByHandle("hero-banner").then((p) => {
+    fetchProductByHandle("hero-images").then((p) => {
       if (p && p.images.length > 0) setHeroImages(p.images);
     }).catch(() => {});
   }, []);
