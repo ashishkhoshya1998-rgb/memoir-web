@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, createContext, useContext } from "react";
 import { useProducts, useShopifyCart, useCollections, type CartItem, type MemoirCollection } from "../lib/useShopify";
-import type { MemoirProduct } from "../lib/shopify";
+import { fetchProductByHandle, type MemoirProduct } from "../lib/shopify";
 import { auth as firebaseAuth, googleProvider, RecaptchaVerifier, signInWithPhoneNumber, signInWithPopup } from "../lib/firebase";
 import type { ConfirmationResult } from "firebase/auth";
 
@@ -1294,12 +1294,45 @@ function ProductCard({ product, navigate, onAddToCart, style: cardStyle = {} }: 
 
 function HomePage({ navigate }: { navigate: (page: string, param?: string | null) => void; onAddToCart: Function }) {
   const { products, collections } = useStore();
+
+  // Hero carousel — fetches images from "hero-banner" product in Shopify
+  const FALLBACK_HERO = ["https://cdn.shopify.com/s/files/1/0779/8459/6004/files/Gemini_Generated_Image_t8ku8ot8ku8ot8ku.png?v=1774874845"];
+  const [heroImages, setHeroImages] = useState<string[]>(FALLBACK_HERO);
+  const [heroIdx, setHeroIdx] = useState(0);
+
+  useEffect(() => {
+    fetchProductByHandle("hero-banner").then((p) => {
+      if (p && p.images.length > 0) setHeroImages(p.images);
+    }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (heroImages.length <= 1) return;
+    const timer = setInterval(() => {
+      setHeroIdx((prev) => (prev + 1) % heroImages.length);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [heroImages.length]);
+
   return (
     <div>
-      {/* Hero */}
+      {/* Hero Carousel */}
       <section style={{ position: "relative", height: "100vh", minHeight: 600, overflow: "hidden" }}>
         <div className="hero-bg" style={{ position: "absolute", inset: 0 }}>
-          <img src="https://cdn.shopify.com/s/files/1/0779/8459/6004/files/Gemini_Generated_Image_t8ku8ot8ku8ot8ku.png?v=1774874845" alt="Memoir — jewellery as a memory you can touch" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "70% 50%", filter: "brightness(0.97) saturate(0.92)" }} />
+          {heroImages.map((src, i) => (
+            <img
+              key={src}
+              src={src}
+              alt={`Memoir hero ${i + 1}`}
+              style={{
+                position: "absolute", inset: 0, width: "100%", height: "100%",
+                objectFit: "cover", objectPosition: "70% 50%",
+                filter: "brightness(0.97) saturate(0.92)",
+                opacity: i === heroIdx ? 1 : 0,
+                transition: "opacity 0.8s ease-in-out",
+              }}
+            />
+          ))}
           <div className="hero-overlay" style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(250,247,242,0.6) 0%, rgba(250,247,242,0.15) 40%, transparent 60%), linear-gradient(to top, rgba(250,247,242,0.92) 0%, rgba(250,247,242,0.3) 30%, transparent 55%)" }} />
         </div>
         <div className="hero-content content-padding" style={{ position: "relative", zIndex: 2, maxWidth: 1280, margin: "0 auto", padding: "0 32px", height: "100%", display: "flex", alignItems: "flex-end", paddingBottom: 80 }}>
@@ -1337,6 +1370,24 @@ function HomePage({ navigate }: { navigate: (page: string, param?: string | null
             </div>
           </div>
         </div>
+
+        {/* Carousel dots */}
+        {heroImages.length > 1 && (
+          <div style={{ position: "absolute", bottom: 24, left: "50%", transform: "translateX(-50%)", zIndex: 3, display: "flex", gap: 8 }}>
+            {heroImages.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setHeroIdx(i)}
+                style={{
+                  width: i === heroIdx ? 24 : 6, height: 6, borderRadius: 3,
+                  background: i === heroIdx ? "var(--charcoal)" : "rgba(44,44,44,0.3)",
+                  border: "none", cursor: "pointer", padding: 0,
+                  transition: "all 0.3s ease",
+                }}
+              />
+            ))}
+          </div>
+        )}
 
         {/* Scroll Experience peek strip — subtle right edge hint */}
         <div
