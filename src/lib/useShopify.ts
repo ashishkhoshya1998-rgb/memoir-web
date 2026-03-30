@@ -41,8 +41,10 @@ export function useProducts(fallbackProducts: MemoirProduct[]) {
     fetchAllProducts()
       .then((shopifyProducts) => {
         if (cancelled) return;
-        if (shopifyProducts.length > 0) {
-          setProducts(shopifyProducts);
+        // Filter out utility products (hero-banner is used for hero carousel, not for sale)
+        const saleProducts = shopifyProducts.filter((p) => p.handle !== "hero-banner");
+        if (saleProducts.length > 0) {
+          setProducts(saleProducts);
           setIsShopifyConnected(true);
         }
         // If no products on Shopify, keep using fallback
