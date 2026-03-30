@@ -966,7 +966,7 @@ const GLOBAL_STYLES = `
     .hero-text { max-width: 100% !important; }
     .hero-buttons { flex-direction: row !important; }
     .hero-buttons button { padding: 14px 28px !important; flex: 1; }
-    .hero-bg img { object-position: 65% 50% !important; }
+    .hero-bg img { object-position: 80% 50% !important; }
     .hero-overlay { background: linear-gradient(to top, rgba(250,247,242,0.95) 0%, rgba(250,247,242,0.5) 35%, rgba(250,247,242,0.1) 55%, transparent 100%) !important; }
 
     /* Trust strip */
