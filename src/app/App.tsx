@@ -1389,7 +1389,7 @@ function HomePage({ navigate }: { navigate: (page: string, param?: string | null
           </div>
         )}
 
-        {/* Scroll Experience peek strip — subtle right edge hint */}
+        {/* Scroll Experience peek strip — hidden for now
         <div
           className="hero-peek-strip"
           onClick={() => (window as any).scrollExperience?.open("ring")}
@@ -1408,6 +1408,7 @@ function HomePage({ navigate }: { navigate: (page: string, param?: string | null
             fontSize: 14, color: "rgba(44,44,44,0.6)",
           }}>chevron_left</span>
         </div>
+        */}
       </section>
 
       <TrustStrip />
