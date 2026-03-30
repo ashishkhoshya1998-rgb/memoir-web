@@ -1215,7 +1215,12 @@ function ProductCard({ product, navigate, onAddToCart, style: cardStyle = {} }: 
   style?: React.CSSProperties;
 }) {
   const [added, setAdded] = useState(false);
+  const [imgIdx, setImgIdx] = useState(0);
+  const touchStartX = useRef(0);
+  const touchDeltaX = useRef(0);
+  const isSwiping = useRef(false);
   const auth = useAuth();
+  const images = product.images.length > 0 ? product.images : ["/placeholder.jpg"];
 
   const handleQuickAdd = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -1231,12 +1236,73 @@ function ProductCard({ product, navigate, onAddToCart, style: cardStyle = {} }: 
     auth.toggleWishlist(product.id);
   };
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchDeltaX.current = 0;
+    isSwiping.current = false;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchDeltaX.current = e.touches[0].clientX - touchStartX.current;
+    if (Math.abs(touchDeltaX.current) > 10) isSwiping.current = true;
+  };
+
+  const handleTouchEnd = () => {
+    if (Math.abs(touchDeltaX.current) > 40) {
+      if (touchDeltaX.current < 0 && imgIdx < images.length - 1) {
+        setImgIdx(imgIdx + 1);
+      } else if (touchDeltaX.current > 0 && imgIdx > 0) {
+        setImgIdx(imgIdx - 1);
+      }
+    }
+    touchDeltaX.current = 0;
+  };
+
+  const handleCardClick = () => {
+    if (!isSwiping.current) navigate("product", product.id);
+  };
+
   const wishlisted = auth.isWishlisted(product.id);
 
   return (
-    <div className="hover-lift" style={{ cursor: "pointer", position: "relative", ...cardStyle }} onClick={() => navigate("product", product.id)}>
-      <div className="img-zoom" style={{ aspectRatio: "3/4", background: "var(--surface-container)", marginBottom: 16, position: "relative" }}>
-        <img src={product.images[0]} alt={product.name} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+    <div className="hover-lift" style={{ cursor: "pointer", position: "relative", ...cardStyle }} onClick={handleCardClick}>
+      <div
+        style={{ aspectRatio: "3/4", background: "var(--surface-container)", marginBottom: 16, position: "relative", overflow: "hidden" }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        {/* Swipeable image strip */}
+        <div style={{
+          display: "flex", width: `${images.length * 100}%`,
+          transform: `translateX(-${imgIdx * (100 / images.length)}%)`,
+          transition: "transform 0.3s ease-out",
+          height: "100%",
+        }}>
+          {images.map((src, i) => (
+            <img key={i} src={src} alt={`${product.name} ${i + 1}`} loading="lazy" style={{
+              width: `${100 / images.length}%`, height: "100%", objectFit: "cover", flexShrink: 0,
+            }} />
+          ))}
+        </div>
+
+        {/* Image dots — only if multiple images */}
+        {images.length > 1 && (
+          <div style={{
+            position: "absolute", bottom: 10, left: "50%", transform: "translateX(-50%)",
+            display: "flex", gap: 4, zIndex: 2,
+          }}>
+            {images.map((_, i) => (
+              <span key={i} onClick={(e) => { e.stopPropagation(); setImgIdx(i); }} style={{
+                width: i === imgIdx ? 16 : 5, height: 5, borderRadius: 3,
+                background: i === imgIdx ? "white" : "rgba(255,255,255,0.5)",
+                transition: "all 0.25s ease", cursor: "pointer",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+              }} />
+            ))}
+          </div>
+        )}
+
         {/* Wishlist heart */}
         {auth.isLoggedIn && (
           <button onClick={handleWishlist} aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"} style={{
@@ -1245,7 +1311,7 @@ function ProductCard({ product, navigate, onAddToCart, style: cardStyle = {} }: 
             border: "none", borderRadius: "50%", cursor: "pointer",
             display: "flex", alignItems: "center", justifyContent: "center",
             transition: "all 0.25s ease", color: wishlisted ? "#c0392b" : "var(--on-surface-variant)",
-            boxShadow: "0 1px 6px rgba(0,0,0,0.08)",
+            boxShadow: "0 1px 6px rgba(0,0,0,0.08)", zIndex: 2,
           }}>
             <Icon name={wishlisted ? "favorite" : "favorite_border"} size={18} filled={wishlisted} />
           </button>
@@ -1254,7 +1320,7 @@ function ProductCard({ product, navigate, onAddToCart, style: cardStyle = {} }: 
           <button
             onClick={handleQuickAdd}
             style={{
-              position: "absolute", bottom: 12, right: 12,
+              position: "absolute", bottom: 12, right: 12, zIndex: 2,
               width: 40, height: 40, background: added ? "#2d5a2d" : "var(--ivory)",
               border: added ? "none" : "1px solid var(--outline-variant)",
               cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
